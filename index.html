@@ -839,29 +839,44 @@ function jumpToChunk() {
    TEXT LOAD & CHUNK
 ════════════════════════════════════════ */
 function splitText(raw, target) {
-  // 1. 줄 단위로 분리, 빈 줄 제거
+  // ── Step 1: 줄 단위로 분리, 빈 줄 제거 ──
   const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   if (!lines.length) return [raw];
 
-  // 2. target 기준으로 순서대로 묶기 (누락 없음 보장)
+  // ── Step 2: 긴 줄은 문장 부호(。！？!?)로 추가 분할 ──
+  // 소설 텍스트처럼 줄바꿈 없이 붙어있는 경우 대비
+  const segments = [];
+  for (const line of lines) {
+    if (line.length <= target * 1.2) {
+      segments.push(line);
+    } else {
+      // 문장 종결 부호 뒤에서 분리 (부호는 앞 문장에 포함)
+      const parts = line.split(/(?<=[。！？!?])\s*/);
+      for (const p of parts) {
+        if (p.length > 0) segments.push(p);
+      }
+    }
+  }
+
+  // ── Step 3: target 기준으로 순서대로 묶기 (누락 없음 보장) ──
   const chunks = [];
   let current = '';
   let currentLen = 0;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
     if (currentLen === 0) {
-      current = line;
-      currentLen = line.length;
+      current = seg;
+      currentLen = seg.length;
     } else {
-      const newLen = currentLen + 1 + line.length; // +1 for newline
+      const newLen = currentLen + 1 + seg.length; // +1 for separator
       if (newLen <= target * 1.1) {
-        current = current + '\n' + line;
+        current = current + '\n' + seg;
         currentLen = newLen;
       } else {
         chunks.push(current);
-        current = line;
-        currentLen = line.length;
+        current = seg;
+        currentLen = seg.length;
       }
     }
   }
@@ -956,7 +971,7 @@ async function analyzeCurrentChunk() {
   try {
     // 캐시 체크
     const hash = await hashText(text);
-    const cacheKey = `jp_v3_${hash}`;
+    const cacheKey = `jp_v4_${hash}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       document.getElementById('analyzingMsg').textContent = '⚡ 캐시된 분석 결과를 불러왔어요.';
@@ -970,7 +985,8 @@ async function analyzeCurrentChunk() {
 
     const prompt = `당신은 일본어 교육 전문가입니다. 아래 일본어 텍스트를 분석하고, 반드시 유효한 JSON만 반환하세요. 마크다운 코드블록이나 기타 텍스트는 절대 포함하지 마세요.
 
-중요: 응답을 간결하게 유지하세요.
+중요 규칙:
+- sentences에는 텍스트의 모든 문장을 빠짐없이 포함할 것 (문장 생략 금지)
 - sentences의 words는 문장당 핵심 단어 최대 3개만, note는 1줄 이내
 - vocab 각 카테고리는 최대 4개, 설명은 짧게
 - grammar는 최대 2개, explanation은 2줄 이내, examples는 1개만
