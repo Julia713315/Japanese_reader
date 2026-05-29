@@ -839,44 +839,33 @@ function jumpToChunk() {
    TEXT LOAD & CHUNK
 ════════════════════════════════════════ */
 function splitText(raw, target) {
-  const FLEX = 0.15;
+  // 1. 줄 단위로 분리, 빈 줄 제거
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (!lines.length) return [raw];
 
-  // 줄 단위로 분리 후 문장 추출 (가사/소설 모두 대응)
-  const lines = raw.split('\n');
-  const sentences = [];
-  lines.forEach(line => {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      if (sentences.length > 0 && sentences[sentences.length-1] !== '') sentences.push('');
-      return;
-    }
-    const parts = trimmed.match(/[^。！？!?]+[。！？!?]*[」』）\)\]"]*/g) || [trimmed];
-    parts.forEach(p => { if (p.trim()) sentences.push(p.trim()); });
-  });
-
-  // 빈줄 연속 제거
-  const cleaned = sentences.filter((s, i) => !(s === '' && (i === 0 || sentences[i-1] === '')));
-  if (!cleaned.length) return [raw];
-
-  const min = target * (1 - FLEX);
-  const max = target * (1 + FLEX);
+  // 2. target 기준으로 순서대로 묶기 (누락 없음 보장)
   const chunks = [];
   let current = '';
+  let currentLen = 0;
 
-  cleaned.forEach(sent => {
-    if (sent === '') {
-      if (current.trim().length >= min) { chunks.push(current.trim()); current = ''; }
-      else { current += '\n'; }
-      return;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (currentLen === 0) {
+      current = line;
+      currentLen = line.length;
+    } else {
+      const newLen = currentLen + 1 + line.length; // +1 for newline
+      if (newLen <= target * 1.1) {
+        current = current + '\n' + line;
+        currentLen = newLen;
+      } else {
+        chunks.push(current);
+        current = line;
+        currentLen = line.length;
+      }
     }
-    const sep = (current && !current.endsWith('\n')) ? '\n' : '';
-    const candidate = current + sep + sent;
-    if (!current.trim()) { current = sent; }
-    else if (candidate.length <= max) { current = candidate; }
-    else if (current.trim().length >= min) { chunks.push(current.trim()); current = sent; }
-    else { current = candidate; }
-  });
-  if (current.trim()) chunks.push(current.trim());
+  }
+  if (current) chunks.push(current);
   return chunks.length ? chunks : [raw];
 }
 
