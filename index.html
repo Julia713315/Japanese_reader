@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日本語 Interactive Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&family=Shippori+Mincho:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #faf9f6;
+  --bg2:      #f2efe8;
+  --bg3:      #e8e4da;
+  --text:     #1c1a16;
+  --text2:    #5c5848;
+  --text3:    #9c9888;
+  --accent:   #7a6a50;
+  --accent2:  #b8a888;
+  --info:     #385480;
+  --info-bg:  #edf1f8;
+  --success:  #2d6a4a;
+  --succ-bg:  #edf5f0;
+  --danger:   #8a3838;
+  --dang-bg:  #f8eeee;
+  --border:   #ddd8cc;
+  --border2:  #c8c2b4;
+  --shadow:   0 2px 12px rgba(0,0,0,0.07);
+  --r:        6px;
+  --r-lg:     12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* ─── API KEY MODAL ─── */
+#apiModal {
+  position: fixed; inset: 0;
+  background: rgba(15,13,10,0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999; backdrop-filter: blur(6px);
+}
+.modal-box {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-lg);
+  padding: 2.2rem 2.6rem;
+  width: 420px; max-width: 94vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.modal-box h2 { font-family: 'Shippori Mincho', serif; font-size: 18px; font-weight: 500; margin-bottom: 8px; }
+.modal-box p { font-size: 13px; color: var(--text2); margin-bottom: 1.4rem; line-height: 1.65; }
+.modal-box input {
+  width: 100%; padding: 10px 13px;
+  border: 1px solid var(--border2); border-radius: var(--r);
+  font-size: 13px; font-family: monospace;
+  background: var(--bg2); color: var(--text);
+  margin-bottom: 10px; outline: none; transition: border-color 0.15s;
+}
+.modal-box input:focus { border-color: var(--accent); }
+.modal-box .note { font-size: 11px; color: var(--text3); margin-bottom: 1.2rem; }
+.modal-box .note a { color: var(--info); }
+.modal-box button {
+  width: 100%; padding: 10px;
+  background: var(--accent); color: var(--bg);
+  border: none; border-radius: var(--r);
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif; transition: background 0.15s;
+}
+.modal-box button:hover { background: var(--text); }
+
+/* ─── MANAGE MODAL ─── */
+#manageModal {
+  position: fixed; inset: 0;
+  background: rgba(15,13,10,0.75);
+  display: none; align-items: flex-start; justify-content: center;
+  z-index: 9998; backdrop-filter: blur(4px);
+  padding: 20px; overflow-y: auto;
+}
+#manageModal.open { display: flex; }
+.manage-box {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-lg);
+  width: 580px; max-width: 96vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  margin: auto;
+}
+.manage-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.2rem 1.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.manage-header h2 { font-family: 'Shippori Mincho', serif; font-size: 16px; font-weight: 500; }
+.manage-close {
+  background: none; border: none; font-size: 20px; cursor: pointer;
+  color: var(--text3); line-height: 1; padding: 4px;
+}
+.manage-close:hover { color: var(--text); }
+.manage-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  padding: 0 1.6rem;
+}
+.manage-tab {
+  padding: 10px 14px; font-size: 12px; color: var(--text2);
+  background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+  transition: all 0.15s; white-space: nowrap; margin-bottom: -1px;
+}
+.manage-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+.manage-pane { display: none; padding: 1.4rem 1.6rem; }
+.manage-pane.active { display: block; }
+
+/* manage UI elements */
+.mg-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin-bottom: 6px; }
+.mg-input {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: var(--r);
+  font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg2); color: var(--text);
+  outline: none; margin-bottom: 10px; transition: border-color 0.15s;
+}
+.mg-input:focus { border-color: var(--accent); }
+.mg-textarea {
+  width: 100%; padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: var(--r);
+  font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg2); color: var(--text);
+  min-height: 140px; resize: vertical; outline: none;
+  margin-bottom: 10px; transition: border-color 0.15s; line-height: 1.8;
+}
+.mg-textarea:focus { border-color: var(--accent); }
+.mg-btn {
+  padding: 8px 18px; background: var(--accent); color: var(--bg);
+  border: none; border-radius: var(--r); font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: 'Noto Sans KR', sans-serif; transition: background 0.15s;
+}
+.mg-btn:hover { background: var(--text); }
+.mg-btn.secondary {
+  background: var(--bg); color: var(--text2);
+  border: 1px solid var(--border);
+}
+.mg-btn.secondary:hover { background: var(--bg3); }
+.mg-btn.danger { background: var(--danger); }
+.mg-btn.danger:hover { background: #6a2828; }
+
+/* text list */
+.text-list { margin-top: 4px; }
+.text-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border: 1px solid var(--border);
+  border-radius: var(--r); margin-bottom: 8px;
+  background: var(--bg); transition: background 0.12s;
+}
+.text-item.active-text { border-color: var(--accent); background: var(--info-bg); }
+.text-item-info { flex: 1; min-width: 0; }
+.text-item-title { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.text-item-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.text-item-btns { display: flex; gap: 6px; flex-shrink: 0; margin-left: 10px; }
+
+/* progress bar */
+.progress-wrap { margin-top: 12px; }
+.progress-bar-bg { background: var(--bg3); border-radius: 20px; height: 8px; overflow: hidden; margin: 6px 0; }
+.progress-bar-fill { background: var(--accent); height: 100%; border-radius: 20px; transition: width 0.3s; }
+.progress-info { font-size: 12px; color: var(--text2); }
+
+/* chunk size setting */
+.chunk-setting { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.chunk-setting input[type=number] {
+  width: 90px; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: var(--r);
+  font-size: 13px; text-align: center;
+  background: var(--bg2); color: var(--text); outline: none;
+}
+.chunk-setting input[type=number]:focus { border-color: var(--accent); }
+
+/* nav chunk adjust */
+.nav-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.nav-row span { font-size: 13px; color: var(--text2); flex: 1; text-align: center; font-weight: 500; }
+
+/* ─── HEADER ─── */
+header {
+  height: 52px; border-bottom: 1px solid var(--border);
+  padding: 0 2rem; display: flex; align-items: center;
+  background: var(--bg); position: sticky; top: 0; z-index: 200;
+}
+.logo { font-family: 'Shippori Mincho', serif; font-size: 16px; letter-spacing: 0.1em; color: var(--text); margin-right: auto; }
+.logo em { color: var(--accent); font-style: normal; }
+.logo small { font-family: 'Noto Sans KR', sans-serif; font-size: 10px; color: var(--text3); letter-spacing: 0.05em; margin-left: 10px; font-weight: 300; }
+.header-btn {
+  font-size: 11px; color: var(--text3); cursor: pointer;
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 3px 11px; transition: all 0.15s; background: none;
+  font-family: 'Noto Sans KR', sans-serif; margin-left: 6px;
+}
+.header-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ─── TABS ─── */
+.tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--bg); padding: 0 2rem;
+  position: sticky; top: 52px; z-index: 199; overflow-x: auto;
+}
+.tab-btn {
+  padding: 13px 18px; font-size: 13px; color: var(--text2);
+  background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+  transition: all 0.15s; white-space: nowrap; margin-bottom: -1px;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+/* ─── MAIN ─── */
+main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* ─── STATUS BAR ─── */
+.status-bar {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 12px 18px;
+  margin-bottom: 1.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px;
+}
+.status-title { font-size: 14px; font-weight: 500; color: var(--text); }
+.status-meta { font-size: 12px; color: var(--text3); }
+.status-progress { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.status-progress-bar { width: 120px; height: 6px; background: var(--bg3); border-radius: 20px; overflow: hidden; }
+.status-progress-fill { height: 100%; background: var(--accent); border-radius: 20px; transition: width 0.3s; }
+.status-progress-text { font-size: 12px; color: var(--text2); white-space: nowrap; }
+
+/* ─── ANALYZING STATE ─── */
+.analyzing-overlay {
+  text-align: center; padding: 3rem 2rem;
+  color: var(--text3); font-size: 14px; display: none;
+}
+.analyzing-overlay .spinner {
+  width: 28px; height: 28px; border: 3px solid var(--bg3);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── READER ─── */
+#readerContent { border-top: 1px solid var(--border); padding-top: 2rem; }
+.reader-header { margin-bottom: 1.25rem; }
+.reader-header h2 { font-family: 'Shippori Mincho', serif; font-size: 19px; font-weight: 500; }
+.reader-header p { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.hint {
+  font-size: 12px; color: var(--text2);
+  background: var(--bg2); border-left: 3px solid var(--accent2);
+  border-radius: 0 var(--r) var(--r) 0; padding: 8px 14px; margin-bottom: 1.5rem;
+}
+.reader-grid { display: grid; grid-template-columns: 1fr 255px; gap: 2.5rem; align-items: start; }
+@media (max-width: 800px) { .reader-grid { grid-template-columns: 1fr; } }
+
+.text-body { line-height: 2.3; font-size: 15px; font-family: 'Noto Serif JP', serif; }
+.text-body p { margin-bottom: 0.5rem; }
+.sentence { cursor: pointer; border-radius: 3px; padding: 2px 2px; transition: background 0.12s; display: inline; }
+.sentence:hover { background: #e6e1d6; }
+.sentence.selected { background: var(--info-bg); }
+.word { border-bottom: 1px dashed var(--accent2); cursor: pointer; display: inline; transition: color 0.12s, border-color 0.12s; }
+.word:hover { color: var(--info); border-color: var(--info); }
+
+.sidebar { border-left: 1px solid var(--border); padding-left: 1.5rem; position: sticky; top: 115px; }
+.sb-sec { margin-bottom: 1.3rem; }
+.sb-lbl { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); font-weight: 500; margin-bottom: 5px; }
+.sb-jp { font-family: 'Shippori Mincho', serif; font-size: 15px; color: var(--info); line-height: 1.7; }
+.sb-text { font-size: 13px; color: var(--text); line-height: 1.7; }
+.sb-note { font-size: 12px; color: var(--text2); background: var(--bg2); border-radius: var(--r); padding: 9px 12px; line-height: 1.75; }
+.sb-placeholder { color: var(--text3); font-style: italic; font-size: 12px; }
+
+/* ─── SECTION HEADINGS ─── */
+.sec-heading { font-size: 15px; font-weight: 500; padding-bottom: 9px; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+.sec-sub { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin: 1.5rem 0 0.6rem; }
+
+/* ─── VOCAB TABLE ─── */
+.vocab-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 0.5rem; }
+.vocab-table th { text-align: left; padding: 7px 12px; background: var(--bg2); color: var(--text2); font-weight: 500; font-size: 11px; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); }
+.vocab-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+.vocab-table tr:last-child td { border-bottom: none; }
+.vocab-table tr:hover td { background: var(--bg2); }
+.jp-cell { font-family: 'Shippori Mincho', serif; font-size: 14px; color: var(--info); }
+
+/* ─── GRAMMAR CARDS ─── */
+.grammar-card { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 15px 18px; margin-bottom: 12px; }
+.grammar-card h4 { font-size: 14px; font-weight: 500; margin-bottom: 7px; }
+.grammar-card .desc { font-size: 13px; color: var(--text2); line-height: 1.7; }
+.grammar-ex { font-family: 'Shippori Mincho', serif; color: var(--info); font-size: 13px; margin-top: 7px; }
+.grammar-note { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+/* ─── QUIZ ─── */
+.quiz-sec { margin-bottom: 2.2rem; }
+.quiz-lbl { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 1rem; }
+.q-block { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 16px; margin-bottom: 10px; background: var(--bg); }
+.q-text { font-size: 14px; color: var(--text); margin-bottom: 10px; line-height: 1.65; }
+.option { display: block; width: 100%; text-align: left; padding: 8px 13px; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg); color: var(--text); font-size: 13px; cursor: pointer; margin-bottom: 6px; font-family: 'Noto Sans KR', sans-serif; transition: all 0.12s; }
+.option:last-of-type { margin-bottom: 0; }
+.option:hover:not(:disabled) { background: var(--bg2); border-color: var(--border2); }
+.option.correct { background: var(--succ-bg) !important; border-color: var(--success) !important; color: var(--success) !important; font-weight: 500; }
+.option.wrong { background: var(--dang-bg) !important; border-color: var(--danger) !important; color: var(--danger) !important; text-decoration: line-through; }
+.explanation { font-size: 12px; margin-top: 9px; padding: 8px 13px; border-radius: var(--r); background: var(--bg2); color: var(--text2); border-left: 3px solid var(--accent2); line-height: 1.65; display: none; }
+
+.match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.match-item { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--r); font-size: 13px; cursor: pointer; text-align: center; background: var(--bg); color: var(--text); transition: all 0.12s; font-family: 'Noto Sans KR', sans-serif; }
+.match-item:hover:not(.matched-ok) { background: var(--bg2); }
+.match-item.selected { border-color: var(--info); background: var(--info-bg); color: var(--info); }
+.match-item.matched-ok { border-color: var(--success); background: var(--succ-bg); color: var(--success); cursor: default; }
+.match-item.matched-ng { border-color: var(--danger); background: var(--dang-bg); color: var(--danger); }
+
+.trans-input { width: 100%; padding: 8px 11px; margin-top: 7px; border: 1px solid var(--border); border-radius: var(--r); font-size: 13px; font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.12s; }
+.trans-input:focus { border-color: var(--accent2); }
+.btn-sm { margin-top: 6px; padding: 5px 14px; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg); color: var(--text2); font-size: 12px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; transition: all 0.12s; }
+.btn-sm:hover { background: var(--bg2); }
+.trans-result { font-size: 12px; margin-top: 8px; color: var(--text2); line-height: 1.65; }
+
+/* ─── COMPLETE BUTTON ─── */
+.complete-section {
+  margin-top: 2.5rem; padding-top: 2rem;
+  border-top: 2px solid var(--border);
+  text-align: center;
+}
+.btn-complete {
+  padding: 14px 40px;
+  background: var(--success); color: #fff;
+  border: none; border-radius: var(--r-lg);
+  font-size: 15px; font-weight: 500; cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: background 0.15s; letter-spacing: 0.03em;
+}
+.btn-complete:hover { background: #1f4f36; }
+.complete-note { font-size: 12px; color: var(--text3); margin-top: 8px; }
+
+/* ─── EMPTY ─── */
+.empty { color: var(--text3); font-style: italic; font-size: 13px; padding: 1rem 0; }
+
+/* cache dot */
+.cache-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--success); margin-right: 5px; vertical-align: middle; }
+
+/* ─── PRINT STYLES ─── */
+@media print {
+  #apiModal, #manageModal, header, .tabs, .status-bar,
+  .hint, .sidebar, .header-btn, .complete-section { display: none !important; }
+  body { background: #fff; font-size: 11pt; color: #000; }
+  main { max-width: 100%; padding: 0; }
+  .tab-pane { display: none !important; }
+  #printArea { display: block !important; }
+
+  .print-title { font-family: 'Shippori Mincho', serif; font-size: 16pt; font-weight: 600; border-bottom: 2px solid #000; padding-bottom: 6pt; margin-bottom: 14pt; }
+  .print-meta { font-size: 9pt; color: #666; margin-bottom: 20pt; }
+  .print-sentence { border: 1px solid #ccc; border-radius: 4pt; padding: 10pt 12pt; margin-bottom: 12pt; page-break-inside: avoid; }
+  .print-jp { font-family: 'Shippori Mincho', serif; font-size: 14pt; color: #1a2a4a; margin-bottom: 5pt; line-height: 1.8; }
+  .print-kr { font-size: 11pt; color: #333; margin-bottom: 3pt; }
+  .print-en { font-size: 10pt; color: #666; margin-bottom: 6pt; }
+  .print-note { font-size: 9pt; color: #555; background: #f5f4f0; border-left: 3pt solid #b8a888; padding: 5pt 8pt; border-radius: 0 3pt 3pt 0; }
+  .print-note-label { font-size: 8pt; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2pt; }
+  .print-words { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 6pt 0; }
+  .print-words th { background: #eae8e2; text-align: left; padding: 3pt 7pt; font-size: 8.5pt; border-bottom: 1px solid #ccc; }
+  .print-words td { padding: 3pt 7pt; border-bottom: 1px solid #e8e6e0; vertical-align: top; }
+  .print-words tr:last-child td { border-bottom: none; }
+  .print-jp-cell { font-family: 'Shippori Mincho', serif; color: #2a3a6a; }
+
+  .print-section-title { font-size: 13pt; font-weight: 600; border-bottom: 1px solid #ccc; padding-bottom: 4pt; margin: 18pt 0 10pt; }
+  .print-vocab-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin-bottom: 10pt; }
+  .print-vocab-table th { background: #eae8e2; text-align: left; padding: 3pt 7pt; font-size: 8.5pt; border-bottom: 1px solid #ccc; }
+  .print-vocab-table td { padding: 3pt 7pt; border-bottom: 1px solid #e8e6e0; }
+  .print-vocab-table tr:last-child td { border-bottom: none; }
+  .print-grammar-item { margin-bottom: 10pt; padding: 7pt 10pt; border: 1px solid #ccc; border-radius: 3pt; page-break-inside: avoid; }
+  .print-grammar-title { font-size: 11pt; font-weight: 600; margin-bottom: 4pt; }
+  .print-grammar-desc { font-size: 9.5pt; color: #444; margin-bottom: 4pt; }
+  .print-grammar-ex { font-family: 'Shippori Mincho', serif; font-size: 9.5pt; color: #1a2a4a; margin-top: 3pt; }
+}
+#printArea { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ── API KEY MODAL ── -->
+<div id="apiModal">
+  <div class="modal-box">
+    <h2>🔑 Anthropic API 키 입력</h2>
+    <p>Claude API로 일본어 텍스트를 분석해요. API 키는 이 기기 브라우저에만 저장되며 외부로 전송되지 않아요.</p>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+    <p class="note">키가 없으면 → <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> 에서 발급받으세요.</p>
+    <button onclick="saveApiKey()">시작하기</button>
+  </div>
+</div>
+
+<!-- ── MANAGE MODAL ── -->
+<div id="manageModal">
+  <div class="manage-box">
+    <div class="manage-header">
+      <h2>📂 텍스트 관리</h2>
+      <button class="manage-close" onclick="closeManage()">✕</button>
+    </div>
+    <div class="manage-tabs">
+      <button class="manage-tab active" onclick="switchManageTab('add')">텍스트 추가</button>
+      <button class="manage-tab" onclick="switchManageTab('list')">텍스트 목록</button>
+      <button class="manage-tab" onclick="switchManageTab('settings')">분량 설정</button>
+      <button class="manage-tab" onclick="switchManageTab('progress')">진도 확인</button>
+      <button class="manage-tab" onclick="switchManageTab('navigate')">회차 이동</button>
+    </div>
+
+    <!-- 텍스트 추가 -->
+    <div id="mp-add" class="manage-pane active">
+      <div class="mg-label">텍스트 제목</div>
+      <input class="mg-input" id="newTextTitle" placeholder="예) NHK 뉴스 5월호, 이 세계의 비밀 1화 등" />
+      <div class="mg-label">일본어 텍스트</div>
+      <textarea class="mg-textarea" id="newTextBody" placeholder="일본어 텍스트를 붙여넣으세요."></textarea>
+      <div style="display:flex;gap:8px">
+        <button class="mg-btn" onclick="addText()">저장하기</button>
+        <button class="mg-btn secondary" onclick="closeManage()">취소</button>
+      </div>
+      <div id="addMsg" style="font-size:12px;color:var(--success);margin-top:8px;min-height:16px"></div>
+    </div>
+
+    <!-- 텍스트 목록 -->
+    <div id="mp-list" class="manage-pane">
+      <div id="textListContainer"></div>
+    </div>
+
+    <!-- 분량 설정 -->
+    <div id="mp-settings" class="manage-pane">
+      <div class="mg-label">회차당 글자 수 (기본: 300자)</div>
+      <div class="chunk-setting">
+        <input type="number" id="chunkSizeInput" value="300" min="50" max="2000" step="50" />
+        <span style="font-size:13px;color:var(--text2)">자</span>
+        <button class="mg-btn" onclick="saveChunkSize()">저장</button>
+      </div>
+      <p style="font-size:12px;color:var(--text3);line-height:1.7">
+        짧은 뉴스·대화문 → 150~250자<br>
+        일반 소설·에세이 → 300~400자<br>
+        가사·시 등 → 자유롭게 조절<br>
+        ※ 변경 후 해당 텍스트를 다시 선택하면 새 분량으로 적용돼요.
+      </p>
+      <div id="chunkMsg" style="font-size:12px;color:var(--success);margin-top:8px;min-height:16px"></div>
+    </div>
+
+    <!-- 진도 확인 -->
+    <div id="mp-progress" class="manage-pane">
+      <div id="progressContainer"></div>
+    </div>
+
+    <!-- 회차 이동 -->
+    <div id="mp-navigate" class="manage-pane">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">현재 텍스트의 회차를 직접 이동할 수 있어요.</p>
+      <div id="navigateContainer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">日本語 <em>Reader</em> <small>일본어 학습 도우미</small></div>
+  <div style="display:flex;align-items:center;gap:4px">
+    <button class="header-btn" onclick="openManage()">📂 텍스트 관리</button>
+    <button class="header-btn" id="printBtn" onclick="printAnalysis()" style="display:none">🖨️ 프린트</button>
+    <button class="header-btn" onclick="changeKey()">🔑 API 키</button>
+  </div>
+</header>
+
+<!-- ── TABS ── -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('reader')">📄 원문 읽기</button>
+  <button class="tab-btn" onclick="showTab('vocab')">📚 어휘 정리</button>
+  <button class="tab-btn" onclick="showTab('grammar')">📘 문법 정리</button>
+  <button class="tab-btn" onclick="showTab('quiz')">✏️ 연습 문제</button>
+</div>
+
+<!-- ── MAIN ── -->
+<main>
+
+  <!-- 상태 바 -->
+  <div class="status-bar" id="statusBar" style="display:none">
+    <div>
+      <div class="status-title" id="statusTitle">—</div>
+      <div class="status-meta" id="statusMeta">—</div>
+    </div>
+    <div class="status-progress">
+      <div class="status-progress-bar">
+        <div class="status-progress-fill" id="statusProgressFill" style="width:0%"></div>
+      </div>
+      <div class="status-progress-text" id="statusProgressText">0%</div>
+    </div>
+  </div>
+
+  <!-- 분석 중 표시 -->
+  <div class="analyzing-overlay" id="analyzingOverlay">
+    <div class="spinner"></div>
+    <div id="analyzingMsg">Claude가 분석 중이에요… 잠시만요.</div>
+  </div>
+
+  <!-- READER TAB -->
+  <div id="tab-reader" class="tab-pane active">
+    <div id="readerContent" style="display:none">
+      <div class="reader-header">
+        <h2 id="docTitle">—</h2>
+        <p>문장을 클릭하면 번역을, 단어(점선 밑줄)를 클릭하면 어휘·문법 설명을 사이드바에서 확인할 수 있어요.</p>
+      </div>
+      <div class="hint">💡 <strong>Tip.</strong> 문장 클릭 → 번역 / 단어 클릭 → 어휘·문법 노트. 같은 텍스트는 캐시되어 재분석 없이 바로 불러와요.</div>
+      <div class="reader-grid">
+        <div class="text-body" id="textBody"></div>
+        <div class="sidebar">
+          <div class="sb-sec">
+            <div class="sb-lbl">일본어</div>
+            <div class="sb-jp" id="sb-jp"><span class="sb-placeholder">문장을 클릭하세요</span></div>
+          </div>
+          <div class="sb-sec">
+            <div class="sb-lbl">한국어 번역</div>
+            <div class="sb-text" id="sb-kr"><span class="sb-placeholder">—</span></div>
+          </div>
+          <div class="sb-sec">
+            <div class="sb-lbl">English</div>
+            <div class="sb-text" id="sb-en"><span class="sb-placeholder">—</span></div>
+          </div>
+          <div class="sb-sec">
+            <div class="sb-lbl">문법 · 어휘 노트</div>
+            <div class="sb-note" id="sb-note"><span class="sb-placeholder">단어를 클릭해보세요.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="empty" id="readerEmpty" style="padding:3rem 0;text-align:center">
+      📂 <strong>텍스트 관리</strong>에서 텍스트를 추가하고 선택하면 학습이 시작돼요.
+    </div>
+  </div>
+
+  <!-- VOCAB TAB -->
+  <div id="tab-vocab" class="tab-pane">
+    <div class="sec-heading">주요 어휘 정리</div>
+    <div id="vocabContent"><div class="empty">먼저 텍스트를 선택하고 분석을 기다려주세요.</div></div>
+  </div>
+
+  <!-- GRAMMAR TAB -->
+  <div id="tab-grammar" class="tab-pane">
+    <div class="sec-heading">주요 문법 정리</div>
+    <div id="grammarContent"><div class="empty">먼저 텍스트를 선택하고 분석을 기다려주세요.</div></div>
+  </div>
+
+  <!-- QUIZ TAB -->
+  <div id="tab-quiz" class="tab-pane">
+    <div class="sec-heading">응용 연습 문제</div>
+    <div id="quizContent"><div class="empty">먼저 텍스트를 선택하고 분석을 기다려주세요.</div></div>
+    <!-- 완료 버튼 -->
+    <div class="complete-section" id="completeSection" style="display:none">
+      <button class="btn-complete" onclick="completeChunk()">✅ 오늘 학습 완료 — 다음 회차로</button>
+      <div class="complete-note" id="completeNote">완료 버튼을 누르면 다음 회차로 자동 이동하고 분석이 시작돼요.</div>
+    </div>
+  </div>
+
+</main>
+
+<div id="printArea"></div>
+
+<script>
+/* ════════════════════════════════════════
+   GLOBALS
+════════════════════════════════════════ */
+let API_KEY = '';
+let analysis = null;
+let matchSel = null;
+
+// 현재 활성 텍스트 상태
+let currentTextId = null;   // 현재 텍스트 ID
+let currentChunkIdx = 0;    // 현재 회차 (0-based)
+let currentChunks = [];     // 분할된 청크 배열
+let chunkSize = 300;        // 글자수 설정
+
+/* ════════════════════════════════════════
+   STORAGE HELPERS
+════════════════════════════════════════ */
+function getTexts() {
+  try { return JSON.parse(localStorage.getItem('jp_texts') || '[]'); } catch(_) { return []; }
+}
+function saveTexts(arr) {
+  localStorage.setItem('jp_texts', JSON.stringify(arr));
+}
+function getProgress() {
+  try { return JSON.parse(localStorage.getItem('jp_progress') || '{}'); } catch(_) { return {}; }
+}
+function saveProgress(obj) {
+  localStorage.setItem('jp_progress', JSON.stringify(obj));
+}
+function getChunkSize() {
+  return parseInt(localStorage.getItem('jp_chunk_size') || '300', 10);
+}
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+window.onload = () => {
+  // API 키
+  const k = localStorage.getItem('jp_key');
+  if (k) { API_KEY = k; document.getElementById('apiModal').style.display = 'none'; }
+
+  // 설정 로드
+  chunkSize = getChunkSize();
+  document.getElementById('chunkSizeInput').value = chunkSize;
+
+  // 마지막 활성 텍스트 자동 로드
+  const lastId = localStorage.getItem('jp_last_text');
+  if (lastId) {
+    const texts = getTexts();
+    const found = texts.find(t => t.id === lastId);
+    if (found) {
+      loadText(lastId, false); // false = 자동 분석 실행
+      return;
+    }
+  }
+  // 텍스트 없으면 빈 상태
+  showEmptyState();
+};
+
+/* ════════════════════════════════════════
+   API KEY
+════════════════════════════════════════ */
+function saveApiKey() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if (!k || !k.startsWith('sk-')) { alert('올바른 API 키를 입력해주세요 (sk-ant-... 형식)'); return; }
+  API_KEY = k;
+  localStorage.setItem('jp_key', k);
+  document.getElementById('apiModal').style.display = 'none';
+  // 키 입력 후 텍스트가 있으면 분석 시작
+  if (currentTextId && currentChunks.length > 0) {
+    analyzeCurrentChunk();
+  }
+}
+function changeKey() {
+  document.getElementById('apiKeyInput').value = API_KEY;
+  document.getElementById('apiModal').style.display = 'flex';
+}
+
+/* ════════════════════════════════════════
+   TABS
+════════════════════════════════════════ */
+function showTab(t) {
+  ['reader','vocab','grammar','quiz'].forEach((n, i) => {
+    document.querySelectorAll('.tab-btn')[i].classList.toggle('active', n === t);
+    document.getElementById('tab-' + n).classList.toggle('active', n === t);
+  });
+}
+
+/* ════════════════════════════════════════
+   MANAGE MODAL
+════════════════════════════════════════ */
+function openManage() {
+  document.getElementById('manageModal').classList.add('open');
+  refreshManageUI();
+}
+function closeManage() {
+  document.getElementById('manageModal').classList.remove('open');
+}
+function switchManageTab(tab) {
+  document.querySelectorAll('.manage-tab').forEach((b, i) => {
+    const tabs = ['add','list','settings','progress','navigate'];
+    b.classList.toggle('active', tabs[i] === tab);
+    document.getElementById('mp-' + tabs[i]).classList.toggle('active', tabs[i] === tab);
+  });
+  if (tab === 'list') renderTextList();
+  if (tab === 'progress') renderProgressView();
+  if (tab === 'navigate') renderNavigateView();
+  if (tab === 'settings') {
+    document.getElementById('chunkSizeInput').value = getChunkSize();
+  }
+}
+function refreshManageUI() {
+  // 현재 활성 탭 refresh
+  const activeTab = document.querySelector('.manage-tab.active');
+  if (activeTab) {
+    const tabs = ['add','list','settings','progress','navigate'];
+    const idx = [...document.querySelectorAll('.manage-tab')].indexOf(activeTab);
+    if (idx === 1) renderTextList();
+    if (idx === 3) renderProgressView();
+    if (idx === 4) renderNavigateView();
+  }
+}
+
+/* ─── 텍스트 추가 ─── */
+function addText() {
+  const title = document.getElementById('newTextTitle').value.trim();
+  const body  = document.getElementById('newTextBody').value.trim();
+  if (!title) { alert('제목을 입력해주세요.'); return; }
+  if (!body)  { alert('텍스트를 입력해주세요.'); return; }
+
+  const texts = getTexts();
+  const id = 'txt_' + Date.now();
+  texts.push({ id, title, body, createdAt: new Date().toISOString() });
+  saveTexts(texts);
+
+  document.getElementById('newTextTitle').value = '';
+  document.getElementById('newTextBody').value = '';
+  document.getElementById('addMsg').textContent = '✅ 저장됐어요!';
+  setTimeout(() => document.getElementById('addMsg').textContent = '', 2000);
+
+  // 방금 추가한 텍스트 바로 로드
+  closeManage();
+  loadText(id, false);
+}
+
+/* ─── 텍스트 목록 ─── */
+function renderTextList() {
+  const texts = getTexts();
+  const progress = getProgress();
+  const container = document.getElementById('textListContainer');
+
+  if (!texts.length) {
+    container.innerHTML = '<div class="empty">저장된 텍스트가 없어요. "텍스트 추가" 탭에서 추가해주세요.</div>';
+    return;
+  }
+
+  container.innerHTML = texts.map(t => {
+    const p = progress[t.id] || { chunkIdx: 0 };
+    const chunks = splitText(t.body, getChunkSize());
+    const total = chunks.length;
+    const done  = Math.min(p.chunkIdx, total);
+    const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+    const isActive = t.id === currentTextId;
+
+    return `<div class="text-item${isActive ? ' active-text' : ''}">
+      <div class="text-item-info">
+        <div class="text-item-title">${t.title}</div>
+        <div class="text-item-meta">${done}/${total} 회차 완료 · ${pct}% · ${t.body.length}자</div>
+      </div>
+      <div class="text-item-btns">
+        ${!isActive ? `<button class="mg-btn" style="font-size:12px;padding:5px 12px" onclick="selectText('${t.id}')">선택</button>` : '<span style="font-size:12px;color:var(--accent);font-weight:500">학습 중</span>'}
+        <button class="mg-btn danger" style="font-size:12px;padding:5px 10px" onclick="deleteText('${t.id}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectText(id) {
+  closeManage();
+  loadText(id, false);
+}
+
+function deleteText(id) {
+  if (!confirm('이 텍스트를 삭제할까요? 진도와 캐시는 유지돼요.')) return;
+  let texts = getTexts();
+  texts = texts.filter(t => t.id !== id);
+  saveTexts(texts);
+  if (currentTextId === id) {
+    currentTextId = null;
+    currentChunks = [];
+    showEmptyState();
+  }
+  renderTextList();
+}
+
+/* ─── 분량 설정 ─── */
+function saveChunkSize() {
+  const val = parseInt(document.getElementById('chunkSizeInput').value, 10);
+  if (isNaN(val) || val < 50) { alert('50자 이상으로 입력해주세요.'); return; }
+  chunkSize = val;
+  localStorage.setItem('jp_chunk_size', val);
+  document.getElementById('chunkMsg').textContent = '✅ 저장됐어요! 텍스트를 다시 선택하면 적용돼요.';
+  setTimeout(() => document.getElementById('chunkMsg').textContent = '', 2500);
+}
+
+/* ─── 진도 확인 ─── */
+function renderProgressView() {
+  const texts = getTexts();
+  const progress = getProgress();
+  const container = document.getElementById('progressContainer');
+
+  if (!texts.length) {
+    container.innerHTML = '<div class="empty">저장된 텍스트가 없어요.</div>';
+    return;
+  }
+
+  container.innerHTML = texts.map(t => {
+    const p = progress[t.id] || { chunkIdx: 0 };
+    const chunks = splitText(t.body, getChunkSize());
+    const total = chunks.length;
+    const done  = Math.min(p.chunkIdx, total);
+    const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    return `<div style="margin-bottom:18px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">${t.title}</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+      <div class="progress-info">${done} / ${total} 회차 완료 (${pct}%) — 총 ${t.body.length}자</div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── 회차 이동 ─── */
+function renderNavigateView() {
+  const container = document.getElementById('navigateContainer');
+  if (!currentTextId) {
+    container.innerHTML = '<div class="empty">먼저 텍스트를 선택해주세요.</div>';
+    return;
+  }
+  const texts = getTexts();
+  const t = texts.find(x => x.id === currentTextId);
+  if (!t) return;
+  const total = currentChunks.length;
+
+  container.innerHTML = `
+    <div style="font-size:13px;font-weight:500;margin-bottom:4px">${t.title}</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px">총 ${total} 회차</div>
+    <div class="nav-row">
+      <button class="mg-btn secondary" style="padding:7px 14px" onclick="navigateChunk(-1)">◀ 이전</button>
+      <span>현재: ${currentChunkIdx + 1} / ${total} 회차</span>
+      <button class="mg-btn secondary" style="padding:7px 14px" onclick="navigateChunk(+1)">다음 ▶</button>
+    </div>
+    <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:13px;color:var(--text2)">특정 회차로:</span>
+      <input type="number" id="jumpInput" min="1" max="${total}" value="${currentChunkIdx+1}" style="width:70px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;background:var(--bg2);color:var(--text);outline:none;text-align:center" />
+      <button class="mg-btn" style="padding:6px 14px" onclick="jumpToChunk()">이동</button>
+    </div>
+  `;
+}
+
+function navigateChunk(d) {
+  const newIdx = currentChunkIdx + d;
+  if (newIdx < 0 || newIdx >= currentChunks.length) return;
+  currentChunkIdx = newIdx;
+  closeManage();
+  analyzeCurrentChunk();
+}
+
+function jumpToChunk() {
+  const val = parseInt(document.getElementById('jumpInput').value, 10) - 1;
+  if (isNaN(val) || val < 0 || val >= currentChunks.length) { alert('올바른 회차를 입력해주세요.'); return; }
+  currentChunkIdx = val;
+  closeManage();
+  analyzeCurrentChunk();
+}
+
+/* ════════════════════════════════════════
+   TEXT LOAD & CHUNK
+════════════════════════════════════════ */
+function splitText(raw, target) {
+  const FLEX = 0.15;
+
+  // 줄 단위로 분리 후 문장 추출 (가사/소설 모두 대응)
+  const lines = raw.split('\n');
+  const sentences = [];
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (sentences.length > 0 && sentences[sentences.length-1] !== '') sentences.push('');
+      return;
+    }
+    const parts = trimmed.match(/[^。！？!?]+[。！？!?]*[」』）\)\]"]*/g) || [trimmed];
+    parts.forEach(p => { if (p.trim()) sentences.push(p.trim()); });
+  });
+
+  // 빈줄 연속 제거
+  const cleaned = sentences.filter((s, i) => !(s === '' && (i === 0 || sentences[i-1] === '')));
+  if (!cleaned.length) return [raw];
+
+  const min = target * (1 - FLEX);
+  const max = target * (1 + FLEX);
+  const chunks = [];
+  let current = '';
+
+  cleaned.forEach(sent => {
+    if (sent === '') {
+      if (current.trim().length >= min) { chunks.push(current.trim()); current = ''; }
+      else { current += '\n'; }
+      return;
+    }
+    const sep = (current && !current.endsWith('\n')) ? '\n' : '';
+    const candidate = current + sep + sent;
+    if (!current.trim()) { current = sent; }
+    else if (candidate.length <= max) { current = candidate; }
+    else if (current.trim().length >= min) { chunks.push(current.trim()); current = sent; }
+    else { current = candidate; }
+  });
+  if (current.trim()) chunks.push(current.trim());
+  return chunks.length ? chunks : [raw];
+}
+
+function loadText(id, skipAutoAnalyze) {
+  const texts = getTexts();
+  const t = texts.find(x => x.id === id);
+  if (!t) return;
+
+  currentTextId = id;
+  chunkSize = getChunkSize();
+  currentChunks = splitText(t.body, chunkSize);
+
+  // 진도 복원
+  const progress = getProgress();
+  const p = progress[id] || { chunkIdx: 0 };
+  currentChunkIdx = Math.min(p.chunkIdx, currentChunks.length - 1);
+
+  localStorage.setItem('jp_last_text', id);
+  updateStatusBar();
+
+  if (!skipAutoAnalyze) {
+    analyzeCurrentChunk();
+  }
+}
+
+/* ════════════════════════════════════════
+   STATUS BAR
+════════════════════════════════════════ */
+function updateStatusBar() {
+  const texts = getTexts();
+  const t = texts.find(x => x.id === currentTextId);
+  if (!t) return;
+
+  const total = currentChunks.length;
+  const done  = currentChunkIdx;
+  const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  document.getElementById('statusBar').style.display = 'flex';
+  document.getElementById('statusTitle').textContent = t.title;
+  document.getElementById('statusMeta').textContent =
+    `${currentChunkIdx + 1} / ${total} 회차 · ${currentChunks[currentChunkIdx]?.length || 0}자`;
+  document.getElementById('statusProgressFill').style.width = pct + '%';
+  document.getElementById('statusProgressText').textContent = pct + '%';
+}
+
+/* ════════════════════════════════════════
+   EMPTY STATE
+════════════════════════════════════════ */
+function showEmptyState() {
+  document.getElementById('statusBar').style.display = 'none';
+  document.getElementById('readerContent').style.display = 'none';
+  document.getElementById('readerEmpty').style.display = 'block';
+  document.getElementById('printBtn').style.display = 'none';
+  document.getElementById('completeSection').style.display = 'none';
+  analysis = null;
+}
+
+/* ════════════════════════════════════════
+   HASH (cache key)
+════════════════════════════════════════ */
+async function hashText(t) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('').slice(0, 16);
+}
+
+/* ════════════════════════════════════════
+   ANALYZE
+════════════════════════════════════════ */
+async function analyzeCurrentChunk() {
+  if (!currentChunks.length) return;
+  if (!API_KEY) { changeKey(); return; }
+
+  const text = currentChunks[currentChunkIdx];
+  if (!text) return;
+
+  const overlay = document.getElementById('analyzingOverlay');
+  const readerContent = document.getElementById('readerContent');
+  const readerEmpty = document.getElementById('readerEmpty');
+
+  readerEmpty.style.display = 'none';
+  readerContent.style.display = 'none';
+  overlay.style.display = 'block';
+  document.getElementById('completeSection').style.display = 'none';
+  document.getElementById('printBtn').style.display = 'none';
+
+  updateStatusBar();
+
+  try {
+    // 캐시 체크
+    const hash = await hashText(text);
+    const cacheKey = `jp_v3_${hash}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      document.getElementById('analyzingMsg').textContent = '⚡ 캐시된 분석 결과를 불러왔어요.';
+      analysis = JSON.parse(cached);
+      overlay.style.display = 'none';
+      renderAll();
+      return;
+    }
+
+    document.getElementById('analyzingMsg').textContent = 'Claude가 분석 중이에요… 잠시만요.';
+
+    const prompt = `당신은 일본어 교육 전문가입니다. 아래 일본어 텍스트를 분석하고, 반드시 유효한 JSON만 반환하세요. 마크다운 코드블록이나 기타 텍스트는 절대 포함하지 마세요.
+
+중요: 응답을 간결하게 유지하세요.
+- sentences의 words는 문장당 핵심 단어 최대 3개만, note는 1줄 이내
+- vocab 각 카테고리는 최대 4개, 설명은 짧게
+- grammar는 최대 2개, explanation은 2줄 이내, examples는 1개만
+- quiz는 객관식 2개, 매칭 4쌍만 (번역/독해 문제는 반드시 생략)
+- 모든 설명은 핵심만 간단히
+
+텍스트: """${text}"""
+
+JSON 스키마:
+{
+  "title": "작품/텍스트 추정 제목 또는 첫 문장 요약",
+  "sentences": [
+    {
+      "jp": "원문 문장",
+      "kr": "한국어 번역",
+      "en": "English translation",
+      "words": [
+        {"word": "단어", "reading": "히라가나", "meaning": "한국어 뜻", "grammar": "품사·문법 설명"}
+      ],
+      "note": "이 문장의 핵심 문법·어휘 포인트 1줄"
+    }
+  ],
+  "vocab": {
+    "nouns":      [{"jp":"단어","reading":"읽기","kr":"의미","note":"비고"}],
+    "verbs":      [{"jp":"기본형","reading":"읽기","kr":"의미","conjugation":"주요 활용"}],
+    "adjectives": [{"jp":"단어","reading":"읽기","kr":"의미","type":"い형/な형"}],
+    "expressions":[{"jp":"표현","reading":"읽기","kr":"의미","note":"사용법"}]
+  },
+  "grammar": [
+    {"title":"문법 포인트","explanation":"설명","examples":["예문1"],"note":"추가 메모"}
+  ],
+  "quiz": {
+    "multiple_choice": [
+      {"question":"문제","options":["a)","b)","c)","d)"],"answer":0,"explanation":"해설"}
+    ],
+    "matching": {
+      "pairs": [{"jp":"일본어","kr":"한국어"}]
+    },
+    "translation": [],
+    "comprehension": []
+  }
+}`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    let raw = data.content.map(c => c.text || '').join('').replace(/```json|```/g, '').trim();
+    analysis = JSON.parse(raw);
+
+    // 캐시 저장
+    try { localStorage.setItem(cacheKey, JSON.stringify(analysis)); } catch(_) {}
+
+    overlay.style.display = 'none';
+    renderAll();
+
+  } catch (e) {
+    overlay.style.display = 'none';
+    document.getElementById('readerEmpty').style.display = 'block';
+    document.getElementById('readerEmpty').innerHTML = `⚠️ 오류가 발생했어요: ${e.message}<br><button onclick="analyzeCurrentChunk()" style="margin-top:10px;padding:6px 16px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);cursor:pointer;font-family:inherit">다시 시도</button>`;
+    console.error(e);
+  }
+}
+
+/* ════════════════════════════════════════
+   COMPLETE (회차 완료)
+════════════════════════════════════════ */
+function completeChunk() {
+  if (!currentTextId) return;
+  const total = currentChunks.length;
+  const nextIdx = currentChunkIdx + 1;
+
+  // 진도 저장
+  const progress = getProgress();
+  if (!progress[currentTextId]) progress[currentTextId] = {};
+  progress[currentTextId].chunkIdx = nextIdx;
+  saveProgress(progress);
+
+  if (nextIdx >= total) {
+    // 전체 완료
+    document.getElementById('completeNote').textContent = '🎉 이 텍스트를 모두 완료했어요!';
+    alert('🎉 이 텍스트를 모두 읽었어요! 텍스트 관리에서 새 텍스트를 추가해보세요.');
+    updateStatusBar();
+    return;
+  }
+
+  currentChunkIdx = nextIdx;
+  analyzeCurrentChunk();
+}
+
+/* ════════════════════════════════════════
+   RENDER ALL
+════════════════════════════════════════ */
+function renderAll() {
+  renderReader();
+  renderVocab();
+  renderGrammar();
+  renderQuiz();
+  document.getElementById('readerContent').style.display = 'block';
+  document.getElementById('readerEmpty').style.display = 'none';
+  document.getElementById('docTitle').textContent = analysis.title || '—';
+  document.getElementById('printBtn').style.display = 'inline-block';
+  document.getElementById('completeSection').style.display = 'block';
+  // 마지막 회차이면 버튼 텍스트 변경
+  const isLast = currentChunkIdx >= currentChunks.length - 1;
+  const btn = document.querySelector('.btn-complete');
+  if (btn) btn.textContent = isLast ? '🎉 전체 완료' : '✅ 오늘 학습 완료 — 다음 회차로';
+  updateStatusBar();
+}
+
+/* ════════════════════════════════════════
+   READER RENDER
+════════════════════════════════════════ */
+function renderReader() {
+  const body = document.getElementById('textBody');
+  body.innerHTML = '';
+  (analysis.sentences || []).forEach((s, si) => {
+    const p = document.createElement('p');
+    const span = document.createElement('span');
+    span.className = 'sentence';
+    span.onclick = () => selectSentence(si, span);
+
+    let html = s.jp;
+    (s.words || []).forEach(w => {
+      if (!w.word) return;
+      const wEsc = w.word.replace(/[-[\]{}()*+?.,\\^$|#\s]/g,'\\$&');
+      html = html.replace(new RegExp(wEsc, 'g'),
+        `<span class="word" onclick="event.stopPropagation();showWord(${si},'${esc(w.word)}','${esc(w.reading||'')}','${esc(w.meaning||'')}','${esc(w.grammar||'')}')">${w.word}</span>`
+      );
+    });
+    span.innerHTML = html;
+    p.appendChild(span);
+    body.appendChild(p);
+  });
+}
+
+function selectSentence(si, el) {
+  document.querySelectorAll('.sentence').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+  const s = analysis.sentences[si];
+  document.getElementById('sb-jp').textContent = s.jp;
+  document.getElementById('sb-kr').textContent = s.kr;
+  document.getElementById('sb-en').textContent = s.en || '—';
+  document.getElementById('sb-note').textContent = s.note || '—';
+}
+
+function showWord(si, word, reading, meaning, grammar) {
+  const s = analysis.sentences[si];
+  document.getElementById('sb-jp').innerHTML =
+    `<span style="font-size:18px">${word}</span>${reading ? ` <span style="font-size:12px;color:var(--text3)">(${reading})</span>` : ''}`;
+  document.getElementById('sb-kr').textContent = meaning;
+  document.getElementById('sb-en').textContent = s.en || '—';
+  document.getElementById('sb-note').textContent = grammar || s.note || '—';
+}
+
+/* ════════════════════════════════════════
+   VOCAB RENDER
+════════════════════════════════════════ */
+function renderVocab() {
+  const v = analysis.vocab || {};
+  const secs = [
+    { key:'nouns',       label:'명사',        cols:['jp','reading','kr','note'],        heads:['일본어','읽기','한국어','비고'] },
+    { key:'verbs',       label:'동사',        cols:['jp','reading','kr','conjugation'], heads:['기본형','읽기','한국어','주요 활용'] },
+    { key:'adjectives',  label:'형용사',      cols:['jp','reading','kr','type'],        heads:['일본어','읽기','한국어','종류'] },
+    { key:'expressions', label:'표현·관용구', cols:['jp','reading','kr','note'],        heads:['표현','읽기','한국어','사용법'] }
+  ];
+  let html = '';
+  secs.forEach(sec => {
+    const rows = v[sec.key];
+    if (!rows || !rows.length) return;
+    html += `<div class="sec-sub">${sec.label}</div>`;
+    html += `<table class="vocab-table"><thead><tr>${sec.heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+    rows.forEach(r => {
+      html += `<tr>${sec.cols.map((c, ci) =>
+        `<td${ci===0?' class="jp-cell"':''}>${r[c] || '—'}</td>`
+      ).join('')}</tr>`;
+    });
+    html += '</tbody></table>';
+  });
+  document.getElementById('vocabContent').innerHTML = html || '<div class="empty">어휘 데이터가 없어요.</div>';
+}
+
+/* ════════════════════════════════════════
+   GRAMMAR RENDER
+════════════════════════════════════════ */
+function renderGrammar() {
+  const g = analysis.grammar || [];
+  if (!g.length) {
+    document.getElementById('grammarContent').innerHTML = '<div class="empty">문법 데이터가 없어요.</div>';
+    return;
+  }
+  let html = '';
+  g.forEach((item, i) => {
+    html += `<div class="grammar-card">
+      <h4>${i+1}. ${item.title || ''}</h4>
+      <p class="desc">${item.explanation || ''}</p>`;
+    (item.examples || []).forEach(ex => { html += `<div class="grammar-ex">${ex}</div>`; });
+    if (item.note) html += `<p class="grammar-note">${item.note}</p>`;
+    html += '</div>';
+  });
+  document.getElementById('grammarContent').innerHTML = html;
+}
+
+/* ════════════════════════════════════════
+   QUIZ RENDER
+════════════════════════════════════════ */
+function renderQuiz() {
+  const q = analysis.quiz || {};
+  let html = '';
+  matchSel = null;
+
+  if (q.multiple_choice && q.multiple_choice.length) {
+    html += `<div class="quiz-sec"><div class="quiz-lbl">A. 문법 선택 (객관식)</div>`;
+    q.multiple_choice.forEach((item, qi) => {
+      html += `<div class="q-block"><div class="q-text">${qi+1}. ${item.question}</div>`;
+      item.options.forEach((opt, oi) => {
+        html += `<button class="option" onclick="checkMC(this,'mc',${qi},${oi},${item.answer},'${esc(item.explanation||'')}')">${opt}</button>`;
+      });
+      html += `<div class="explanation" id="exp-mc-${qi}"></div></div>`;
+    });
+    html += '</div>';
+  }
+
+  if (q.matching && q.matching.pairs && q.matching.pairs.length) {
+    const pairs = q.matching.pairs;
+    const shuffled = [...pairs.map(p => p.kr)].sort(() => Math.random() - 0.5);
+    window._mPairs = pairs; window._mRight = shuffled;
+    html += `<div class="quiz-sec"><div class="quiz-lbl">B. 어휘 연결 짝짓기</div>`;
+    html += `<p style="font-size:13px;color:var(--text2);margin-bottom:12px">왼쪽(일본어)과 오른쪽(한국어)을 순서대로 클릭해 짝지어보세요.</p>`;
+    html += `<div class="match-grid">`;
+    const len = Math.max(pairs.length, shuffled.length);
+    for (let i = 0; i < len; i++) {
+      html += pairs[i]   ? `<button class="match-item" id="ml-${i}" onclick="pickMatch('L',${i},'${esc(pairs[i].jp)}')">${pairs[i].jp}</button>` : '<div></div>';
+      html += shuffled[i]!==undefined ? `<button class="match-item" id="mr-${i}" onclick="pickMatch('R',${i},'${esc(shuffled[i])}')">${shuffled[i]}</button>` : '<div></div>';
+    }
+    html += `</div><button class="btn-sm" onclick="resetMatch()">↺ 다시 시작</button></div>`;
+  }
+
+  if (q.translation && q.translation.length) {
+    html += `<div class="quiz-sec"><div class="quiz-lbl">C. 번역 문제</div>`;
+    q.translation.forEach((item, ti) => {
+      const dir = item.direction === 'jp→kr' ? '일→한' : '한→일';
+      html += `<div class="q-block">
+        <div class="q-text">[${dir}] ${item.sentence}</div>
+        <input class="trans-input" id="tr-${ti}" placeholder="번역을 입력하세요" onkeydown="if(event.key==='Enter')checkTrans(${ti},'${esc(item.answer||'')}')"/>
+        <button class="btn-sm" onclick="checkTrans(${ti},'${esc(item.answer||'')}')">확인</button>
+        <div class="trans-result" id="tr-res-${ti}"></div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  if (q.comprehension && q.comprehension.length) {
+    html += `<div class="quiz-sec"><div class="quiz-lbl">D. 내용 이해 (독해)</div>`;
+    q.comprehension.forEach((item, ci) => {
+      html += `<div class="q-block"><div class="q-text">${ci+1}. ${item.question}</div>`;
+      item.options.forEach((opt, oi) => {
+        html += `<button class="option" onclick="checkMC(this,'comp',${ci},${oi},${item.answer},'${esc(item.explanation||'')}')">${opt}</button>`;
+      });
+      html += `<div class="explanation" id="exp-comp-${ci}"></div></div>`;
+    });
+    html += '</div>';
+  }
+
+  document.getElementById('quizContent').innerHTML = html || '<div class="empty">연습문제 데이터가 없어요.</div>';
+}
+
+/* ════════════════════════════════════════
+   QUIZ HANDLERS
+════════════════════════════════════════ */
+function checkMC(btn, prefix, qi, oi, correct, explanation) {
+  const block = btn.closest('.q-block');
+  block.querySelectorAll('.option').forEach((b, i) => {
+    b.disabled = true;
+    if (i === correct) b.classList.add('correct');
+    else if (b === btn) b.classList.add('wrong');
+  });
+  const el = document.getElementById(`exp-${prefix}-${qi}`);
+  if (el && explanation) { el.textContent = explanation; el.style.display = 'block'; }
+}
+
+function pickMatch(side, idx, val) {
+  const id = side === 'L' ? `ml-${idx}` : `mr-${idx}`;
+  const el = document.getElementById(id);
+  if (!el || el.classList.contains('matched-ok')) return;
+
+  if (!matchSel) {
+    matchSel = { side, idx, val, el };
+    el.classList.add('selected');
+  } else if (matchSel.side === side) {
+    matchSel.el.classList.remove('selected');
+    matchSel = { side, idx, val, el };
+    el.classList.add('selected');
+  } else {
+    const jpVal = side === 'L' ? val : matchSel.val;
+    const krVal = side === 'R' ? val : matchSel.val;
+    const ok = (window._mPairs || []).some(p => p.jp === jpVal && p.kr === krVal);
+    const cls = ok ? 'matched-ok' : 'matched-ng';
+    matchSel.el.classList.remove('selected'); matchSel.el.classList.add(cls);
+    el.classList.add(cls);
+    if (!ok) setTimeout(() => {
+      matchSel.el.classList.remove(cls); el.classList.remove(cls);
+    }, 700);
+    matchSel = null;
+  }
+}
+function resetMatch() {
+  document.querySelectorAll('.match-item').forEach(el => { el.className = 'match-item'; el.disabled = false; });
+  matchSel = null;
+}
+function checkTrans(ti, answer) {
+  const res = document.getElementById('tr-res-' + ti);
+  res.innerHTML = `<strong>모범 답안:</strong> ${answer}<br><span style="font-size:11px;color:var(--text3)">※ 다양한 표현이 가능해요. 의미가 같다면 정답이에요.</span>`;
+}
+
+/* ════════════════════════════════════════
+   PRINT (퀴즈 제외: 원문+해석+단어+문법)
+════════════════════════════════════════ */
+function printAnalysis() {
+  if (!analysis) return;
+  const texts = getTexts();
+  const t = texts.find(x => x.id === currentTextId);
+  const title = t ? `${t.title} — ${currentChunkIdx + 1}회차` : (analysis.title || '일본어 학습 자료');
+  const date = new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' });
+
+  let html = `<div class="print-title">${title}</div>`;
+  html += `<div class="print-meta">학습일: ${date} &nbsp;|&nbsp; 총 ${(analysis.sentences||[]).length}개 문장</div>`;
+
+  // 1. 원문 + 해석 + 단어
+  (analysis.sentences || []).forEach((s, i) => {
+    html += `<div class="print-sentence">`;
+    html += `<div class="print-jp">${i+1}. ${s.jp}</div>`;
+    html += `<div class="print-kr">🇰🇷 ${s.kr}</div>`;
+    if (s.en) html += `<div class="print-en">🇺🇸 ${s.en}</div>`;
+    if (s.words && s.words.length) {
+      html += `<table class="print-words"><thead><tr><th>단어</th><th>읽기</th><th>뜻</th><th>문법</th></tr></thead><tbody>`;
+      s.words.forEach(w => {
+        html += `<tr><td class="print-jp-cell">${w.word||'—'}</td><td>${w.reading||'—'}</td><td>${w.meaning||'—'}</td><td>${w.grammar||'—'}</td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    if (s.note) html += `<div class="print-note"><div class="print-note-label">문법 포인트</div>${s.note}</div>`;
+    html += `</div>`;
+  });
+
+  // 2. 어휘 정리
+  const v = analysis.vocab || {};
+  const vocabSecs = [
+    { key:'nouns', label:'명사', heads:['일본어','읽기','한국어','비고'], cols:['jp','reading','kr','note'] },
+    { key:'verbs', label:'동사', heads:['기본형','읽기','한국어','활용'], cols:['jp','reading','kr','conjugation'] },
+    { key:'adjectives', label:'형용사', heads:['일본어','읽기','한국어','종류'], cols:['jp','reading','kr','type'] },
+    { key:'expressions', label:'표현·관용구', heads:['표현','읽기','한국어','사용법'], cols:['jp','reading','kr','note'] }
+  ];
+  let hasVocab = false;
+  vocabSecs.forEach(sec => { if (v[sec.key] && v[sec.key].length) hasVocab = true; });
+  if (hasVocab) {
+    html += `<div class="print-section-title">어휘 정리</div>`;
+    vocabSecs.forEach(sec => {
+      const rows = v[sec.key];
+      if (!rows || !rows.length) return;
+      html += `<div style="font-size:10pt;font-weight:600;margin:8pt 0 4pt;color:#555">${sec.label}</div>`;
+      html += `<table class="print-vocab-table"><thead><tr>${sec.heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+      rows.forEach(r => { html += `<tr>${sec.cols.map((c,ci) => `<td${ci===0?' style="font-family:Shippori Mincho,serif;color:#2a3a6a"':''}>${r[c]||'—'}</td>`).join('')}</tr>`; });
+      html += `</tbody></table>`;
+    });
+  }
+
+  // 3. 문법 정리
+  const g = analysis.grammar || [];
+  if (g.length) {
+    html += `<div class="print-section-title">문법 정리</div>`;
+    g.forEach((item, i) => {
+      html += `<div class="print-grammar-item">
+        <div class="print-grammar-title">${i+1}. ${item.title||''}</div>
+        <div class="print-grammar-desc">${item.explanation||''}</div>`;
+      (item.examples||[]).forEach(ex => { html += `<div class="print-grammar-ex">▶ ${ex}</div>`; });
+      if (item.note) html += `<div style="font-size:8.5pt;color:#888;margin-top:3pt">${item.note}</div>`;
+      html += `</div>`;
+    });
+  }
+
+  document.getElementById('printArea').innerHTML = html;
+  window.print();
+}
+
+/* ── escape for inline JS attrs ── */
+function esc(s) {
+  return (s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,' ');
+}
+</script>
+</body>
+</html>
