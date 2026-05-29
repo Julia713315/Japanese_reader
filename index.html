@@ -264,6 +264,8 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
 
 .text-body { line-height: 2.3; font-size: 15px; font-family: 'Noto Serif JP', serif; }
 .text-body p { margin-bottom: 0.5rem; }
+.text-body ruby { ruby-align: center; }
+.text-body rt { font-size: 0.55em; color: var(--text3); font-family: 'Noto Sans KR', sans-serif; }
 .sentence { cursor: pointer; border-radius: 3px; padding: 2px 2px; transition: background 0.12s; display: inline; }
 .sentence:hover { background: #e6e1d6; }
 .sentence.selected { background: var(--info-bg); }
@@ -971,7 +973,7 @@ async function analyzeCurrentChunk() {
   try {
     // 캐시 체크
     const hash = await hashText(text);
-    const cacheKey = `jp_v4_${hash}`;
+    const cacheKey = `jp_v5_${hash}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       document.getElementById('analyzingMsg').textContent = '⚡ 캐시된 분석 결과를 불러왔어요.';
@@ -985,13 +987,16 @@ async function analyzeCurrentChunk() {
 
     const prompt = `당신은 일본어 교육 전문가입니다. 아래 일본어 텍스트를 분석하고, 반드시 유효한 JSON만 반환하세요. 마크다운 코드블록이나 기타 텍스트는 절대 포함하지 마세요.
 
+대상 학습자: JLPT N2 수준의 한국어 화자
+
 중요 규칙:
 - sentences에는 텍스트의 모든 문장을 빠짐없이 포함할 것 (문장 생략 금지)
-- sentences의 words는 문장당 핵심 단어 최대 3개만, note는 1줄 이내
-- vocab 각 카테고리는 최대 4개, 설명은 짧게
-- grammar는 최대 2개, explanation은 2줄 이내, examples는 1개만
+- ruby_jp: 한자가 포함된 모든 단어에 <ruby>漢字<rt>よみ</rt></ruby> 태그를 적용한 문장 전체를 반환. 히라가나·카타카나만인 단어는 그대로 둘 것
+- words는 문장당 핵심 단어 최대 3개, note는 1줄 이내
+- vocab 각 카테고리는 최대 5개
+- verbs에는 group(1グループ/2グループ/3グループ)과 type(自動詞/他動詞/両方) 필드를 포함
+- grammar: N2 학습자가 이 텍스트에서 배울 만한 문법을 선별. 기초(~です/~ます 등)는 생략. 개수 제한 없이 가치 있는 것만. explanation은 이해에 충분한 분량으로. examples는 텍스트 내 용례 + 추가 예문 1개 정도
 - quiz는 객관식 2개, 매칭 4쌍만 (번역/독해 문제는 반드시 생략)
-- 모든 설명은 핵심만 간단히
 
 텍스트: """${text}"""
 
@@ -1000,7 +1005,8 @@ JSON 스키마:
   "title": "작품/텍스트 추정 제목 또는 첫 문장 요약",
   "sentences": [
     {
-      "jp": "원문 문장",
+      "jp": "원문 문장 (ruby 없는 원본)",
+      "ruby_jp": "<ruby>漢字<rt>かんじ</rt></ruby>가 포함된 문장 전체",
       "kr": "한국어 번역",
       "en": "English translation",
       "words": [
@@ -1011,12 +1017,12 @@ JSON 스키마:
   ],
   "vocab": {
     "nouns":      [{"jp":"단어","reading":"읽기","kr":"의미","note":"비고"}],
-    "verbs":      [{"jp":"기본형","reading":"읽기","kr":"의미","conjugation":"주요 활용"}],
+    "verbs":      [{"jp":"기본형","reading":"읽기","kr":"의미","group":"1グループ/2グループ/3グループ","type":"自動詞/他動詞","conjugation":"주요 활용"}],
     "adjectives": [{"jp":"단어","reading":"읽기","kr":"의미","type":"い형/な형"}],
     "expressions":[{"jp":"표현","reading":"읽기","kr":"의미","note":"사용법"}]
   },
   "grammar": [
-    {"title":"문법 포인트","explanation":"설명","examples":["예문1"],"note":"추가 메모"}
+    {"title":"문법 포인트","explanation":"설명 (N2 학습자가 이해할 수 있도록 충분히)","examples":["텍스트 내 용례","추가 예문"],"note":"추가 메모"}
   ],
   "quiz": {
     "multiple_choice": [
@@ -1123,13 +1129,22 @@ function renderReader() {
     span.className = 'sentence';
     span.onclick = () => selectSentence(si, span);
 
-    let html = s.jp;
+    // ruby_jp가 있으면 후리가나 포함 버전 사용
+    let html = s.ruby_jp || s.jp;
     (s.words || []).forEach(w => {
       if (!w.word) return;
       const wEsc = w.word.replace(/[-[\]{}()*+?.,\\^$|#\s]/g,'\\$&');
-      html = html.replace(new RegExp(wEsc, 'g'),
-        `<span class="word" onclick="event.stopPropagation();showWord(${si},'${esc(w.word)}','${esc(w.reading||'')}','${esc(w.meaning||'')}','${esc(w.grammar||'')}')">${w.word}</span>`
-      );
+      const clickAttr = `onclick="event.stopPropagation();showWord(${si},'${esc(w.word)}','${esc(w.reading||'')}','${esc(w.meaning||'')}','${esc(w.grammar||'')}')"`;
+      // <ruby>漢字<rt>...</rt></ruby> 내부의 단어를 클릭 가능하게 감싸기
+      const rubyRe = new RegExp(`(<ruby>)(${wEsc})((?:<rt>))`, 'g');
+      if (rubyRe.test(html)) {
+        html = html.replace(new RegExp(`(<ruby>)(${wEsc})((?:<rt>))`, 'g'),
+          `$1<span class="word" ${clickAttr}>$2</span>$3`);
+      } else {
+        // 히라가나 전용 단어 등: 첫 번째 매칭만 교체 (rt 태그 내부 오매칭 방지)
+        html = html.replace(new RegExp(wEsc),
+          `<span class="word" ${clickAttr}>${w.word}</span>`);
+      }
     });
     span.innerHTML = html;
     p.appendChild(span);
@@ -1163,7 +1178,7 @@ function renderVocab() {
   const v = analysis.vocab || {};
   const secs = [
     { key:'nouns',       label:'명사',        cols:['jp','reading','kr','note'],        heads:['일본어','읽기','한국어','비고'] },
-    { key:'verbs',       label:'동사',        cols:['jp','reading','kr','conjugation'], heads:['기본형','읽기','한국어','주요 활용'] },
+    { key:'verbs',       label:'동사',        cols:['jp','reading','kr','group','type','conjugation'], heads:['기본형','읽기','한국어','그룹','자/타','주요 활용'] },
     { key:'adjectives',  label:'형용사',      cols:['jp','reading','kr','type'],        heads:['일본어','읽기','한국어','종류'] },
     { key:'expressions', label:'표현·관용구', cols:['jp','reading','kr','note'],        heads:['표현','읽기','한국어','사용법'] }
   ];
@@ -1350,7 +1365,7 @@ function printAnalysis() {
   const v = analysis.vocab || {};
   const vocabSecs = [
     { key:'nouns', label:'명사', heads:['일본어','읽기','한국어','비고'], cols:['jp','reading','kr','note'] },
-    { key:'verbs', label:'동사', heads:['기본형','읽기','한국어','활용'], cols:['jp','reading','kr','conjugation'] },
+    { key:'verbs', label:'동사', heads:['기본형','읽기','한국어','그룹','자/타','활용'], cols:['jp','reading','kr','group','type','conjugation'] },
     { key:'adjectives', label:'형용사', heads:['일본어','읽기','한국어','종류'], cols:['jp','reading','kr','type'] },
     { key:'expressions', label:'표현·관용구', heads:['표현','읽기','한국어','사용법'], cols:['jp','reading','kr','note'] }
   ];
