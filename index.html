@@ -464,6 +464,7 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
   <div class="logo">日本語 <em>Reader</em> <small>일본어 학습 도우미</small></div>
   <div style="display:flex;align-items:center;gap:4px">
     <button class="header-btn" onclick="openManage()">📂 텍스트 관리</button>
+    <button class="header-btn" id="sampleBtn" onclick="loadSample()">🔬 샘플 보기</button>
     <button class="header-btn" id="printBtn" onclick="printAnalysis()" style="display:none">🖨️ 프린트</button>
     <button class="header-btn" onclick="changeKey()">🔑 API 키</button>
   </div>
@@ -519,10 +520,7 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
             <div class="sb-lbl">한국어 번역</div>
             <div class="sb-text" id="sb-kr"><span class="sb-placeholder">—</span></div>
           </div>
-          <div class="sb-sec">
-            <div class="sb-lbl">English</div>
-            <div class="sb-text" id="sb-en"><span class="sb-placeholder">—</span></div>
-          </div>
+
           <div class="sb-sec">
             <div class="sb-lbl">문법 · 어휘 노트</div>
             <div class="sb-note" id="sb-note"><span class="sb-placeholder">단어를 클릭해보세요.</span></div>
@@ -990,13 +988,16 @@ async function analyzeCurrentChunk() {
 대상 학습자: JLPT N2 수준의 한국어 화자
 
 중요 규칙:
+- 모든 설명, 문법 해설, 퀴즈 문제·선택지·해설은 반드시 한국어로 작성할 것 (영어·일본어로 설명 금지)
+- 일본어 예문에는 반드시 한국어 해석을 괄호로 병기할 것. 예: "雨が降りそうだ。(비가 올 것 같다.)"
 - sentences에는 텍스트의 모든 문장을 빠짐없이 포함할 것 (문장 생략 금지)
 - ruby_jp: 한자가 포함된 모든 단어에 <ruby>漢字<rt>よみ</rt></ruby> 태그를 적용한 문장 전체를 반환. 히라가나·카타카나만인 단어는 그대로 둘 것
-- words는 문장당 핵심 단어 최대 3개, note는 1줄 이내
+- words는 문장당 핵심 단어 최대 3개, note는 1줄 이내 (한국어)
 - vocab 각 카테고리는 최대 5개
-- verbs에는 group(1グループ/2グループ/3グループ)과 type(自動詞/他動詞/両方) 필드를 포함
-- grammar: N2 학습자가 이 텍스트에서 배울 만한 문법을 선별. 기초(~です/~ます 등)는 생략. 개수 제한 없이 가치 있는 것만. explanation은 이해에 충분한 분량으로. examples는 텍스트 내 용례 + 추가 예문 1개 정도
-- quiz는 객관식 2개, 매칭 4쌍만 (번역/독해 문제는 반드시 생략)
+- verbs의 group은 "1그룹/2그룹/3그룹"(한국어), type은 "자동사/타동사/양용"(한국어)으로 표기
+- adjectives의 type은 "い형용사/な형용사"(한국어)로 표기
+- grammar: N2 학습자가 이 텍스트에서 배울 만한 문법을 선별. 기초(~です/~ます 등)는 생략. 개수 제한 없이 가치 있는 것만. explanation은 한국어로 충분히 설명. examples는 일본어 예문(한국어 해석 병기)
+- quiz는 객관식 2개, 매칭 4쌍만 (번역/독해 문제는 반드시 생략). 문제·선택지·해설 모두 한국어로
 
 텍스트: """${text}"""
 
@@ -1008,25 +1009,24 @@ JSON 스키마:
       "jp": "원문 문장 (ruby 없는 원본)",
       "ruby_jp": "<ruby>漢字<rt>かんじ</rt></ruby>가 포함된 문장 전체",
       "kr": "한국어 번역",
-      "en": "English translation",
       "words": [
-        {"word": "단어", "reading": "히라가나", "meaning": "한국어 뜻", "grammar": "품사·문법 설명"}
+        {"word": "단어", "reading": "히라가나", "meaning": "한국어 뜻", "grammar": "품사·문법 설명 (한국어)"}
       ],
-      "note": "이 문장의 핵심 문법·어휘 포인트 1줄"
+      "note": "이 문장의 핵심 문법·어휘 포인트 1줄 (한국어)"
     }
   ],
   "vocab": {
-    "nouns":      [{"jp":"단어","reading":"읽기","kr":"의미","note":"비고"}],
-    "verbs":      [{"jp":"기본형","reading":"읽기","kr":"의미","group":"1グループ/2グループ/3グループ","type":"自動詞/他動詞","conjugation":"주요 활용"}],
-    "adjectives": [{"jp":"단어","reading":"읽기","kr":"의미","type":"い형/な형"}],
-    "expressions":[{"jp":"표현","reading":"읽기","kr":"의미","note":"사용법"}]
+    "nouns":      [{"jp":"단어","reading":"읽기","kr":"의미","note":"비고 (한국어)"}],
+    "verbs":      [{"jp":"기본형","reading":"읽기","kr":"의미","group":"1그룹/2그룹/3그룹","type":"자동사/타동사","conjugation":"주요 활용 (한국어 설명)"}],
+    "adjectives": [{"jp":"단어","reading":"읽기","kr":"의미","type":"い형용사/な형용사"}],
+    "expressions":[{"jp":"표현","reading":"읽기","kr":"의미","note":"사용법 (한국어)"}]
   },
   "grammar": [
-    {"title":"문법 포인트","explanation":"설명 (N2 학습자가 이해할 수 있도록 충분히)","examples":["텍스트 내 용례","추가 예문"],"note":"추가 메모"}
+    {"title":"문법 포인트","explanation":"한국어로 충분한 설명","examples":["일본어 예문 (한국어 해석)","추가 예문 (한국어 해석)"],"note":"추가 메모 (한국어)"}
   ],
   "quiz": {
     "multiple_choice": [
-      {"question":"문제","options":["a)","b)","c)","d)"],"answer":0,"explanation":"해설"}
+      {"question":"문제 (한국어)","options":["a)","b)","c)","d)"],"answer":0,"explanation":"해설 (한국어)"}
     ],
     "matching": {
       "pairs": [{"jp":"일본어","kr":"한국어"}]
@@ -1158,7 +1158,6 @@ function selectSentence(si, el) {
   const s = analysis.sentences[si];
   document.getElementById('sb-jp').textContent = s.jp;
   document.getElementById('sb-kr').textContent = s.kr;
-  document.getElementById('sb-en').textContent = s.en || '—';
   document.getElementById('sb-note').textContent = s.note || '—';
 }
 
@@ -1167,7 +1166,6 @@ function showWord(si, word, reading, meaning, grammar) {
   document.getElementById('sb-jp').innerHTML =
     `<span style="font-size:18px">${word}</span>${reading ? ` <span style="font-size:12px;color:var(--text3)">(${reading})</span>` : ''}`;
   document.getElementById('sb-kr').textContent = meaning;
-  document.getElementById('sb-en').textContent = s.en || '—';
   document.getElementById('sb-note').textContent = grammar || s.note || '—';
 }
 
@@ -1349,7 +1347,6 @@ function printAnalysis() {
     html += `<div class="print-sentence">`;
     html += `<div class="print-jp">${i+1}. ${s.jp}</div>`;
     html += `<div class="print-kr">🇰🇷 ${s.kr}</div>`;
-    if (s.en) html += `<div class="print-en">🇺🇸 ${s.en}</div>`;
     if (s.words && s.words.length) {
       html += `<table class="print-words"><thead><tr><th>단어</th><th>읽기</th><th>뜻</th><th>문법</th></tr></thead><tbody>`;
       s.words.forEach(w => {
@@ -1399,6 +1396,163 @@ function printAnalysis() {
 
   document.getElementById('printArea').innerHTML = html;
   window.print();
+}
+
+/* ════════════════════════════════════════
+   SAMPLE DATA (API 없이 UI 미리보기용)
+════════════════════════════════════════ */
+function loadSample() {
+  analysis = {
+    "title": "봄비 내리는 교토의 아침 (샘플)",
+    "sentences": [
+      {
+        "jp": "朝早く目が覚めると、窓の外には静かな雨が降っていた。",
+        "ruby_jp": "<ruby>朝<rt>あさ</rt></ruby><ruby>早<rt>はや</rt></ruby>く<ruby>目<rt>め</rt></ruby>が<ruby>覚<rt>さ</rt></ruby>めると、<ruby>窓<rt>まど</rt></ruby>の<ruby>外<rt>そと</rt></ruby>には<ruby>静<rt>しず</rt></ruby>かな<ruby>雨<rt>あめ</rt></ruby>が<ruby>降<rt>ふ</rt></ruby>っていた。",
+        "kr": "아침 일찍 눈을 뜨니, 창밖에는 조용한 비가 내리고 있었다.",
+        "words": [
+          {"word": "目が覚める", "reading": "めがさめる", "meaning": "눈이 뜨이다, 잠에서 깨다", "grammar": "자동사, 2그룹 동사. '~と' 접속으로 자연스러운 발견의 조건을 표현"},
+          {"word": "静かな", "reading": "しずかな", "meaning": "조용한, 고요한", "grammar": "な형용사의 연체형. 명사 '雨'를 수식"},
+          {"word": "降っていた", "reading": "ふっていた", "meaning": "내리고 있었다", "grammar": "~ている(진행)의 과거형. 비가 계속 내리고 있던 상태를 표현"}
+        ],
+        "note": "'~と' 조건문: 눈을 뜨는 동작이 자연스럽게 비 오는 광경의 발견으로 이어지는 표현"
+      },
+      {
+        "jp": "京都の春はいつもこうだ。",
+        "ruby_jp": "<ruby>京都<rt>きょうと</rt></ruby>の<ruby>春<rt>はる</rt></ruby>はいつもこうだ。",
+        "kr": "교토의 봄은 언제나 이렇다.",
+        "words": [
+          {"word": "いつも", "reading": "いつも", "meaning": "언제나, 항상", "grammar": "빈도 부사. 습관적·반복적 상태를 나타냄"},
+          {"word": "こうだ", "reading": "こうだ", "meaning": "이렇다", "grammar": "지시어 'こう'(이렇게) + 단정 'だ'. 앞 문장의 상황을 가리킴"}
+        ],
+        "note": "짧은 단정문으로 화자의 경험에 기반한 일반화를 표현"
+      },
+      {
+        "jp": "桜の花びらが濡れた石畳に張り付いて、まるで水彩画のようだった。",
+        "ruby_jp": "<ruby>桜<rt>さくら</rt></ruby>の<ruby>花<rt>はな</rt></ruby>びらが<ruby>濡<rt>ぬ</rt></ruby>れた<ruby>石畳<rt>いしだたみ</rt></ruby>に<ruby>張<rt>は</rt></ruby>り<ruby>付<rt>つ</rt></ruby>いて、まるで<ruby>水彩画<rt>すいさいが</rt></ruby>のようだった。",
+        "kr": "벚꽃 꽃잎이 젖은 돌바닥에 달라붙어, 마치 수채화 같았다.",
+        "words": [
+          {"word": "花びら", "reading": "はなびら", "meaning": "꽃잎", "grammar": "명사. '花(꽃)' + 'びら(잎)'의 합성어"},
+          {"word": "張り付く", "reading": "はりつく", "meaning": "달라붙다", "grammar": "자동사, 1그룹 동사. て형으로 뒤 내용과 연결"},
+          {"word": "まるで~のようだ", "reading": "まるで~のようだ", "meaning": "마치 ~같다", "grammar": "비유 표현. 'まるで(마치)'와 'のようだ(~같다)'가 호응"}
+        ],
+        "note": "'まるで~のようだ'는 N3~N2 수준의 비유 표현. 'まるで'는 반드시 '~ようだ/みたいだ'와 함께 사용"
+      },
+      {
+        "jp": "傘を差さずに歩く人々の姿が、どこか懐かしく感じられた。",
+        "ruby_jp": "<ruby>傘<rt>かさ</rt></ruby>を<ruby>差<rt>さ</rt></ruby>さずに<ruby>歩<rt>ある</rt></ruby>く<ruby>人々<rt>ひとびと</rt></ruby>の<ruby>姿<rt>すがた</rt></ruby>が、どこか<ruby>懐<rt>なつ</rt></ruby>かしく<ruby>感<rt>かん</rt></ruby>じられた。",
+        "kr": "우산을 쓰지 않고 걷는 사람들의 모습이, 어딘가 그리운 느낌이었다.",
+        "words": [
+          {"word": "差さずに", "reading": "ささずに", "meaning": "쓰지 않고", "grammar": "'差す'의 부정형 '差さず' + 'に'. '~ないで'의 문어적 표현"},
+          {"word": "どこか", "reading": "どこか", "meaning": "어딘가, 왠지", "grammar": "불확정 부사. 막연한 느낌을 나타낼 때 사용"},
+          {"word": "感じられた", "reading": "かんじられた", "meaning": "느껴졌다", "grammar": "자발의 'られる'. 자연스럽게 그런 감정이 드는 것을 표현"}
+        ],
+        "note": "'~ずに'는 '~ないで'의 문어적·격식적 표현. N2 필수 문법"
+      }
+    ],
+    "vocab": {
+      "nouns": [
+        {"jp": "石畳", "reading": "いしだたみ", "kr": "돌바닥, 돌 포장길", "note": "일본 전통 거리에서 자주 볼 수 있는 돌로 된 길"},
+        {"jp": "水彩画", "reading": "すいさいが", "kr": "수채화", "note": "水(물) + 彩(색) + 画(그림)의 합성어"},
+        {"jp": "花びら", "reading": "はなびら", "kr": "꽃잎", "note": "벚꽃(桜)의 꽃잎을 가리킬 때 자주 사용"},
+        {"jp": "姿", "reading": "すがた", "kr": "모습, 자태", "note": "사람의 외관이나 형태를 나타냄"},
+        {"jp": "傘", "reading": "かさ", "kr": "우산", "note": "雨傘(あまがさ)라고도 함. 양산은 日傘(ひがさ)"}
+      ],
+      "verbs": [
+        {"jp": "目が覚める", "reading": "めがさめる", "kr": "잠에서 깨다", "group": "2그룹", "type": "자동사", "conjugation": "覚めない / 覚めて / 覚めた"},
+        {"jp": "降る", "reading": "ふる", "kr": "(비·눈이) 내리다", "group": "1그룹", "type": "자동사", "conjugation": "降らない / 降って / 降った"},
+        {"jp": "張り付く", "reading": "はりつく", "kr": "달라붙다", "group": "1그룹", "type": "자동사", "conjugation": "張り付かない / 張り付いて / 張り付いた"},
+        {"jp": "差す", "reading": "さす", "kr": "(우산을) 쓰다, 들다", "group": "1그룹", "type": "타동사", "conjugation": "差さない / 差して / 差した"},
+        {"jp": "感じる", "reading": "かんじる", "kr": "느끼다", "group": "2그룹", "type": "타동사", "conjugation": "感じない / 感じて / 感じた / 感じられる(자발)"}
+      ],
+      "adjectives": [
+        {"jp": "静かな", "reading": "しずかな", "kr": "조용한, 고요한", "type": "な형용사"},
+        {"jp": "懐かしい", "reading": "なつかしい", "kr": "그리운, 향수를 자아내는", "type": "い형용사"}
+      ],
+      "expressions": [
+        {"jp": "まるで~のようだ", "reading": "まるで~のようだ", "kr": "마치 ~같다", "note": "비유 표현. 'まるで'는 항상 '~ようだ/みたいだ'와 호응"},
+        {"jp": "~ずに", "reading": "~ずに", "kr": "~하지 않고", "note": "'~ないで'의 문어적 표현. する→せずに"},
+        {"jp": "どこか", "reading": "どこか", "kr": "어딘가, 왠지 모르게", "note": "장소뿐 아니라 막연한 느낌을 나타낼 때도 사용"}
+      ]
+    },
+    "grammar": [
+      {
+        "title": "~と (자연적 발견의 조건)",
+        "explanation": "'~と'는 어떤 동작을 했더니 자연스럽게 결과를 발견하는 상황에 사용해요. '~たら'와 비슷하지만, '~と'는 좀 더 객관적이고 문어적인 뉘앙스가 있어요. 뒤에 의지적인 행동(~しよう, ~してください 등)은 올 수 없다는 점이 중요해요.",
+        "examples": [
+          "朝早く目が覚めると、雨が降っていた。(아침 일찍 눈을 뜨니, 비가 내리고 있었다.)",
+          "ドアを開けると、猫が座っていた。(문을 열자, 고양이가 앉아 있었다.)"
+        ],
+        "note": "'~と' 뒤에 '~てください'나 '~ましょう' 같은 의지 표현은 쓸 수 없어요."
+      },
+      {
+        "title": "~ずに (~하지 않고)",
+        "explanation": "'~ないで'와 같은 의미로, '~하지 않고'라는 뜻이에요. 좀 더 격식적·문어적인 표현이에요. 만드는 법: 동사 미연형(ない형에서 'ない'를 빼고) + ずに. 단, 'する'는 'せずに'가 돼요.",
+        "examples": [
+          "傘を差さずに歩く。(우산을 쓰지 않고 걷다.) ← 텍스트 용례",
+          "朝ごはんを食べずに学校に行った。(아침밥을 먹지 않고 학교에 갔다.)"
+        ],
+        "note": "1그룹: 行く→行かずに, 2그룹: 食べる→食べずに, 3그룹: する→せずに, 来る→来ずに(こずに)"
+      },
+      {
+        "title": "まるで~のようだ (비유 표현)",
+        "explanation": "'마치 ~같다'라는 비유를 나타내요. 'まるで'는 부사로, 반드시 '~ようだ' 또는 '~みたいだ'와 함께 써야 해요. 명사 앞에서는 '~のような + 명사'가 돼요.",
+        "examples": [
+          "まるで水彩画のようだった。(마치 수채화 같았다.) ← 텍스트 용례",
+          "彼女はまるで天使のようだ。(그녀는 마치 천사 같다.)"
+        ],
+        "note": "'~みたいだ'가 좀 더 구어적이에요. 격식적인 글에서는 '~ようだ'를 주로 사용해요."
+      },
+      {
+        "title": "자발의 ~(ら)れる",
+        "explanation": "자발의 'られる'는 '자연히 ~하게 되다'라는 의미로, 감정이나 생각이 저절로 드는 것을 표현해요. 수동과 형태는 같지만, 자발의 경우 '자연스럽게 그렇게 느껴진다'는 뉘앙스가 있어요. 주로 감정·감각 동사(感じる, 思う, 偲ぶ 등)와 함께 사용해요.",
+        "examples": [
+          "懐かしく感じられた。(그리운 느낌이 들었다.) ← 텍스트 용례",
+          "故郷のことが思い出される。(고향이 자연스레 떠오른다.)"
+        ],
+        "note": "자발은 주로 1인칭 주어의 감정·감각에 사용돼요. 문어적 표현에서 자주 나타나요."
+      }
+    ],
+    "quiz": {
+      "multiple_choice": [
+        {
+          "question": "다음 문장의 빈칸에 알맞은 것은?\n「傘を＿＿歩く人々」",
+          "options": ["a) 差さないに", "b) 差さずに", "c) 差さなくに", "d) 差しないで"],
+          "answer": 1,
+          "explanation": "'~ずに'는 '~하지 않고'의 문어적 표현이에요. '差す'(1그룹)의 미연형 '差さ' + 'ずに'가 올바른 형태예요."
+        },
+        {
+          "question": "'まるで水彩画のようだった'에서 'のようだ'의 역할은?",
+          "options": ["a) 추측 (아마 ~일 것이다)", "b) 비유 (마치 ~같다)", "c) 전문 (~라고 한다)", "d) 예시 (예를 들면)"],
+          "answer": 1,
+          "explanation": "'まるで'와 함께 쓰이는 '~のようだ'는 비유를 나타내요. '마치 수채화 같았다'는 뜻이에요."
+        }
+      ],
+      "matching": {
+        "pairs": [
+          {"jp": "石畳", "kr": "돌바닥"},
+          {"jp": "花びら", "kr": "꽃잎"},
+          {"jp": "懐かしい", "kr": "그리운"},
+          {"jp": "傘を差す", "kr": "우산을 쓰다"}
+        ]
+      },
+      "translation": [],
+      "comprehension": []
+    }
+  };
+
+  // 샘플 모드 상태 설정
+  currentTextId = '__sample__';
+  currentChunkIdx = 0;
+  currentChunks = ['(샘플 텍스트)'];
+
+  document.getElementById('statusBar').style.display = 'flex';
+  document.getElementById('statusTitle').textContent = '📌 샘플 미리보기 (API 미사용)';
+  document.getElementById('statusMeta').textContent = '샘플 · 4문장';
+  document.getElementById('statusProgressFill').style.width = '0%';
+  document.getElementById('statusProgressText').textContent = '샘플';
+
+  renderAll();
+  document.getElementById('completeSection').style.display = 'none';
 }
 
 /* ── escape for inline JS attrs ── */
