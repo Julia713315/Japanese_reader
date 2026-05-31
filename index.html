@@ -602,6 +602,15 @@ window.onload = () => {
   const k = localStorage.getItem('jp_key');
   if (k) { API_KEY = k; document.getElementById('apiModal').style.display = 'none'; }
 
+  // ── 구버전 캐시 자동 삭제 (jp_v3_, jp_v5_ → jp_v6_ 로 업그레이드) ──
+  const oldPrefixes = ['jp_v3_', 'jp_v5_'];
+  const toDelete = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (oldPrefixes.some(p => key && key.startsWith(p))) toDelete.push(key);
+  }
+  toDelete.forEach(k => localStorage.removeItem(k));
+
   // 설정 로드
   chunkSize = getChunkSize();
   document.getElementById('chunkSizeInput').value = chunkSize;
@@ -840,48 +849,37 @@ function jumpToChunk() {
    TEXT LOAD & CHUNK
 ════════════════════════════════════════ */
 function splitText(raw, target) {
-  // ── Step 1: 줄 단위로 분리, 빈 줄 제거 ──
-  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  if (!lines.length) return [raw];
+  // 줄바꿈을 먼저 제거해서 줄바꿈 패턴과 무관하게 문장 부호 기준으로 분할
+  const normalized = raw.replace(/\n+/g, '');
+  const sentenceRe = /[^。！？!?\n]+[。！？!?][」』）\)\]"]*/g;
+  const matched = normalized.match(sentenceRe) || [];
+  const remainder = normalized.replace(matched.join(''), '').trim();
+  const sentences = remainder ? [...matched, remainder] : matched;
+  if (!sentences.length) return [raw];
 
-  // ── Step 2: 긴 줄은 문장 부호(。！？!?)로 추가 분할 ──
-  // 소설 텍스트처럼 줄바꿈 없이 붙어있는 경우 대비
-  const segments = [];
-  for (const line of lines) {
-    if (line.length <= target * 1.2) {
-      segments.push(line);
-    } else {
-      // 문장 종결 부호 뒤에서 분리 (부호는 앞 문장에 포함)
-      const parts = line.split(/(?<=[。！？!?])\s*/);
-      for (const p of parts) {
-        if (p.length > 0) segments.push(p);
-      }
-    }
-  }
-
-  // ── Step 3: target 기준으로 순서대로 묶기 (누락 없음 보장) ──
+  const MAX = target * 1.2;       // 최대 120%까지 허용
+  const MIN_FINAL = target * 0.4; // 마지막 청크 최소 허용 (이하면 앞 청크에 합침)
   const chunks = [];
   let current = '';
-  let currentLen = 0;
 
-  for (let i = 0; i < segments.length; i++) {
-    const seg = segments[i];
-    if (currentLen === 0) {
-      current = seg;
-      currentLen = seg.length;
+  for (const sent of sentences) {
+    if (!current) {
+      current = sent;
+    } else if ((current + sent).length <= MAX) {
+      current += sent;
     } else {
-      const newLen = currentLen + 1 + seg.length; // +1 for separator
-      if (newLen <= target * 1.1) {
-        current = current + '\n' + seg;
-        currentLen = newLen;
-      } else {
-        chunks.push(current);
-        current = seg;
-        currentLen = seg.length;
-      }
+      chunks.push(current.trim());
+      current = sent;
     }
   }
-  if (current) chunks.push(current);
+  if (current.trim()) {
+    // 마지막 청크가 너무 짧으면 앞 청크에 합치기
+    if (chunks.length > 0 && current.length < MIN_FINAL) {
+      chunks[chunks.length - 1] += current.trim();
+    } else {
+      chunks.push(current.trim());
+    }
+  }
   return chunks.length ? chunks : [raw];
 }
 
