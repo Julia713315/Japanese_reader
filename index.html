@@ -972,7 +972,7 @@ async function analyzeCurrentChunk() {
   try {
     // 캐시 체크
     const hash = await hashText(text);
-    const cacheKey = `jp_v5_${hash}`;
+    const cacheKey = `jp_v6_${hash}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       document.getElementById('analyzingMsg').textContent = '⚡ 캐시된 분석 결과를 불러왔어요.';
