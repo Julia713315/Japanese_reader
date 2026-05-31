@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>日本語 Interactive Reader</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&family=Shippori+Mincho:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;600&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg:       #faf9f6;
@@ -31,7 +31,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: 'Noto Sans KR', sans-serif;
+  font-family: 'Nanum Myeongjo', serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -54,7 +54,7 @@ body {
   width: 420px; max-width: 94vw;
   box-shadow: 0 20px 60px rgba(0,0,0,0.2);
 }
-.modal-box h2 { font-family: 'Shippori Mincho', serif; font-size: 18px; font-weight: 500; margin-bottom: 8px; }
+.modal-box h2 { font-family: 'Noto Serif JP', serif; font-size: 18px; font-weight: 500; margin-bottom: 8px; }
 .modal-box p { font-size: 13px; color: var(--text2); margin-bottom: 1.4rem; line-height: 1.65; }
 .modal-box input {
   width: 100%; padding: 10px 13px;
@@ -71,7 +71,7 @@ body {
   background: var(--accent); color: var(--bg);
   border: none; border-radius: var(--r);
   font-size: 14px; font-weight: 500; cursor: pointer;
-  font-family: 'Noto Sans KR', sans-serif; transition: background 0.15s;
+  font-family: 'Nanum Myeongjo', serif; transition: background 0.15s;
 }
 .modal-box button:hover { background: var(--text); }
 
@@ -97,7 +97,7 @@ body {
   padding: 1.2rem 1.6rem;
   border-bottom: 1px solid var(--border);
 }
-.manage-header h2 { font-family: 'Shippori Mincho', serif; font-size: 16px; font-weight: 500; }
+.manage-header h2 { font-family: 'Noto Serif JP', serif; font-size: 16px; font-weight: 500; }
 .manage-close {
   background: none; border: none; font-size: 20px; cursor: pointer;
   color: var(--text3); line-height: 1; padding: 4px;
@@ -110,7 +110,7 @@ body {
 .manage-tab {
   padding: 10px 14px; font-size: 12px; color: var(--text2);
   background: none; border: none; border-bottom: 2px solid transparent;
-  cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer; font-family: 'Nanum Myeongjo', serif;
   transition: all 0.15s; white-space: nowrap; margin-bottom: -1px;
 }
 .manage-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
@@ -122,7 +122,7 @@ body {
 .mg-input {
   width: 100%; padding: 9px 12px;
   border: 1px solid var(--border); border-radius: var(--r);
-  font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px; font-family: 'Nanum Myeongjo', serif;
   background: var(--bg2); color: var(--text);
   outline: none; margin-bottom: 10px; transition: border-color 0.15s;
 }
@@ -130,7 +130,7 @@ body {
 .mg-textarea {
   width: 100%; padding: 10px 12px;
   border: 1px solid var(--border); border-radius: var(--r);
-  font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px; font-family: 'Nanum Myeongjo', serif;
   background: var(--bg2); color: var(--text);
   min-height: 140px; resize: vertical; outline: none;
   margin-bottom: 10px; transition: border-color 0.15s; line-height: 1.8;
@@ -139,7 +139,7 @@ body {
 .mg-btn {
   padding: 8px 18px; background: var(--accent); color: var(--bg);
   border: none; border-radius: var(--r); font-size: 13px; font-weight: 500;
-  cursor: pointer; font-family: 'Noto Sans KR', sans-serif; transition: background 0.15s;
+  cursor: pointer; font-family: 'Nanum Myeongjo', serif; transition: background 0.15s;
 }
 .mg-btn:hover { background: var(--text); }
 .mg-btn.secondary {
@@ -190,14 +190,14 @@ header {
   padding: 0 2rem; display: flex; align-items: center;
   background: var(--bg); position: sticky; top: 0; z-index: 200;
 }
-.logo { font-family: 'Shippori Mincho', serif; font-size: 16px; letter-spacing: 0.1em; color: var(--text); margin-right: auto; }
+.logo { font-family: 'Noto Serif JP', serif; font-size: 16px; letter-spacing: 0.1em; color: var(--text); margin-right: auto; }
 .logo em { color: var(--accent); font-style: normal; }
-.logo small { font-family: 'Noto Sans KR', sans-serif; font-size: 10px; color: var(--text3); letter-spacing: 0.05em; margin-left: 10px; font-weight: 300; }
+.logo small { font-family: 'Nanum Myeongjo', serif; font-size: 10px; color: var(--text3); letter-spacing: 0.05em; margin-left: 10px; font-weight: 300; }
 .header-btn {
   font-size: 11px; color: var(--text3); cursor: pointer;
   border: 1px solid var(--border); border-radius: 20px;
   padding: 3px 11px; transition: all 0.15s; background: none;
-  font-family: 'Noto Sans KR', sans-serif; margin-left: 6px;
+  font-family: 'Nanum Myeongjo', serif; margin-left: 6px;
 }
 .header-btn:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -210,7 +210,7 @@ header {
 .tab-btn {
   padding: 13px 18px; font-size: 13px; color: var(--text2);
   background: none; border: none; border-bottom: 2px solid transparent;
-  cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer; font-family: 'Nanum Myeongjo', serif;
   transition: all 0.15s; white-space: nowrap; margin-bottom: -1px;
 }
 .tab-btn:hover { color: var(--text); }
@@ -252,7 +252,7 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
 /* ─── READER ─── */
 #readerContent { border-top: 1px solid var(--border); padding-top: 2rem; }
 .reader-header { margin-bottom: 1.25rem; }
-.reader-header h2 { font-family: 'Shippori Mincho', serif; font-size: 19px; font-weight: 500; }
+.reader-header h2 { font-family: 'Noto Serif JP', serif; font-size: 19px; font-weight: 500; }
 .reader-header p { font-size: 12px; color: var(--text3); margin-top: 3px; }
 .hint {
   font-size: 12px; color: var(--text2);
@@ -265,7 +265,7 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
 .text-body { line-height: 2.3; font-size: 15px; font-family: 'Noto Serif JP', serif; }
 .text-body p { margin-bottom: 0.5rem; }
 .text-body ruby { ruby-align: center; }
-.text-body rt { font-size: 0.55em; color: var(--text3); font-family: 'Noto Sans KR', sans-serif; }
+.text-body rt { font-size: 0.55em; color: var(--text3); font-family: 'Noto Serif JP', serif; }
 .sentence { cursor: pointer; border-radius: 3px; padding: 2px 2px; transition: background 0.12s; display: inline; }
 .sentence:hover { background: #e6e1d6; }
 .sentence.selected { background: var(--info-bg); }
@@ -275,7 +275,7 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
 .sidebar { border-left: 1px solid var(--border); padding-left: 1.5rem; position: sticky; top: 115px; }
 .sb-sec { margin-bottom: 1.3rem; }
 .sb-lbl { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); font-weight: 500; margin-bottom: 5px; }
-.sb-jp { font-family: 'Shippori Mincho', serif; font-size: 15px; color: var(--info); line-height: 1.7; }
+.sb-jp { font-family: 'Noto Serif JP', serif; font-size: 15px; color: var(--info); line-height: 1.7; }
 .sb-text { font-size: 13px; color: var(--text); line-height: 1.7; }
 .sb-note { font-size: 12px; color: var(--text2); background: var(--bg2); border-radius: var(--r); padding: 9px 12px; line-height: 1.75; }
 .sb-placeholder { color: var(--text3); font-style: italic; font-size: 12px; }
@@ -290,13 +290,13 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
 .vocab-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
 .vocab-table tr:last-child td { border-bottom: none; }
 .vocab-table tr:hover td { background: var(--bg2); }
-.jp-cell { font-family: 'Shippori Mincho', serif; font-size: 14px; color: var(--info); }
+.jp-cell { font-family: 'Noto Serif JP', serif; font-size: 14px; color: var(--info); }
 
 /* ─── GRAMMAR CARDS ─── */
 .grammar-card { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 15px 18px; margin-bottom: 12px; }
 .grammar-card h4 { font-size: 14px; font-weight: 500; margin-bottom: 7px; }
 .grammar-card .desc { font-size: 13px; color: var(--text2); line-height: 1.7; }
-.grammar-ex { font-family: 'Shippori Mincho', serif; color: var(--info); font-size: 13px; margin-top: 7px; }
+.grammar-ex { font-family: 'Noto Serif JP', serif; color: var(--info); font-size: 13px; margin-top: 7px; }
 .grammar-note { font-size: 11px; color: var(--text3); margin-top: 5px; }
 
 /* ─── QUIZ ─── */
@@ -304,7 +304,7 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
 .quiz-lbl { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 1rem; }
 .q-block { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 16px; margin-bottom: 10px; background: var(--bg); }
 .q-text { font-size: 14px; color: var(--text); margin-bottom: 10px; line-height: 1.65; }
-.option { display: block; width: 100%; text-align: left; padding: 8px 13px; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg); color: var(--text); font-size: 13px; cursor: pointer; margin-bottom: 6px; font-family: 'Noto Sans KR', sans-serif; transition: all 0.12s; }
+.option { display: block; width: 100%; text-align: left; padding: 8px 13px; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg); color: var(--text); font-size: 13px; cursor: pointer; margin-bottom: 6px; font-family: 'Nanum Myeongjo', serif; transition: all 0.12s; }
 .option:last-of-type { margin-bottom: 0; }
 .option:hover:not(:disabled) { background: var(--bg2); border-color: var(--border2); }
 .option.correct { background: var(--succ-bg) !important; border-color: var(--success) !important; color: var(--success) !important; font-weight: 500; }
@@ -312,15 +312,15 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
 .explanation { font-size: 12px; margin-top: 9px; padding: 8px 13px; border-radius: var(--r); background: var(--bg2); color: var(--text2); border-left: 3px solid var(--accent2); line-height: 1.65; display: none; }
 
 .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-.match-item { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--r); font-size: 13px; cursor: pointer; text-align: center; background: var(--bg); color: var(--text); transition: all 0.12s; font-family: 'Noto Sans KR', sans-serif; }
+.match-item { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--r); font-size: 13px; cursor: pointer; text-align: center; background: var(--bg); color: var(--text); transition: all 0.12s; font-family: 'Nanum Myeongjo', serif; }
 .match-item:hover:not(.matched-ok) { background: var(--bg2); }
 .match-item.selected { border-color: var(--info); background: var(--info-bg); color: var(--info); }
 .match-item.matched-ok { border-color: var(--success); background: var(--succ-bg); color: var(--success); cursor: default; }
 .match-item.matched-ng { border-color: var(--danger); background: var(--dang-bg); color: var(--danger); }
 
-.trans-input { width: 100%; padding: 8px 11px; margin-top: 7px; border: 1px solid var(--border); border-radius: var(--r); font-size: 13px; font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.12s; }
+.trans-input { width: 100%; padding: 8px 11px; margin-top: 7px; border: 1px solid var(--border); border-radius: var(--r); font-size: 13px; font-family: 'Nanum Myeongjo', serif; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.12s; }
 .trans-input:focus { border-color: var(--accent2); }
-.btn-sm { margin-top: 6px; padding: 5px 14px; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg); color: var(--text2); font-size: 12px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; transition: all 0.12s; }
+.btn-sm { margin-top: 6px; padding: 5px 14px; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg); color: var(--text2); font-size: 12px; cursor: pointer; font-family: 'Nanum Myeongjo', serif; transition: all 0.12s; }
 .btn-sm:hover { background: var(--bg2); }
 .trans-result { font-size: 12px; margin-top: 8px; color: var(--text2); line-height: 1.65; }
 
@@ -335,7 +335,7 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
   background: var(--success); color: #fff;
   border: none; border-radius: var(--r-lg);
   font-size: 15px; font-weight: 500; cursor: pointer;
-  font-family: 'Noto Sans KR', sans-serif;
+  font-family: 'Nanum Myeongjo', serif;
   transition: background 0.15s; letter-spacing: 0.03em;
 }
 .btn-complete:hover { background: #1f4f36; }
@@ -356,10 +356,10 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
   .tab-pane { display: none !important; }
   #printArea { display: block !important; }
 
-  .print-title { font-family: 'Shippori Mincho', serif; font-size: 16pt; font-weight: 600; border-bottom: 2px solid #000; padding-bottom: 6pt; margin-bottom: 14pt; }
+  .print-title { font-family: 'Noto Serif JP', serif; font-size: 16pt; font-weight: 600; border-bottom: 2px solid #000; padding-bottom: 6pt; margin-bottom: 14pt; }
   .print-meta { font-size: 9pt; color: #666; margin-bottom: 20pt; }
   .print-sentence { border: 1px solid #ccc; border-radius: 4pt; padding: 10pt 12pt; margin-bottom: 12pt; page-break-inside: avoid; }
-  .print-jp { font-family: 'Shippori Mincho', serif; font-size: 14pt; color: #1a2a4a; margin-bottom: 5pt; line-height: 1.8; }
+  .print-jp { font-family: 'Noto Serif JP', serif; font-size: 14pt; color: #1a2a4a; margin-bottom: 5pt; line-height: 1.8; }
   .print-kr { font-size: 11pt; color: #333; margin-bottom: 3pt; }
   .print-en { font-size: 10pt; color: #666; margin-bottom: 6pt; }
   .print-note { font-size: 9pt; color: #555; background: #f5f4f0; border-left: 3pt solid #b8a888; padding: 5pt 8pt; border-radius: 0 3pt 3pt 0; }
@@ -368,7 +368,7 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
   .print-words th { background: #eae8e2; text-align: left; padding: 3pt 7pt; font-size: 8.5pt; border-bottom: 1px solid #ccc; }
   .print-words td { padding: 3pt 7pt; border-bottom: 1px solid #e8e6e0; vertical-align: top; }
   .print-words tr:last-child td { border-bottom: none; }
-  .print-jp-cell { font-family: 'Shippori Mincho', serif; color: #2a3a6a; }
+  .print-jp-cell { font-family: 'Noto Serif JP', serif; color: #2a3a6a; }
 
   .print-section-title { font-size: 13pt; font-weight: 600; border-bottom: 1px solid #ccc; padding-bottom: 4pt; margin: 18pt 0 10pt; }
   .print-vocab-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin-bottom: 10pt; }
@@ -378,7 +378,7 @@ main { max-width: 1160px; margin: 0 auto; padding: 2rem; }
   .print-grammar-item { margin-bottom: 10pt; padding: 7pt 10pt; border: 1px solid #ccc; border-radius: 3pt; page-break-inside: avoid; }
   .print-grammar-title { font-size: 11pt; font-weight: 600; margin-bottom: 4pt; }
   .print-grammar-desc { font-size: 9.5pt; color: #444; margin-bottom: 4pt; }
-  .print-grammar-ex { font-family: 'Shippori Mincho', serif; font-size: 9.5pt; color: #1a2a4a; margin-top: 3pt; }
+  .print-grammar-ex { font-family: 'Noto Serif JP', serif; font-size: 9.5pt; color: #1a2a4a; margin-top: 3pt; }
 }
 #printArea { display: none; }
 </style>
@@ -1375,7 +1375,7 @@ function printAnalysis() {
       if (!rows || !rows.length) return;
       html += `<div style="font-size:10pt;font-weight:600;margin:8pt 0 4pt;color:#555">${sec.label}</div>`;
       html += `<table class="print-vocab-table"><thead><tr>${sec.heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`;
-      rows.forEach(r => { html += `<tr>${sec.cols.map((c,ci) => `<td${ci===0?' style="font-family:Shippori Mincho,serif;color:#2a3a6a"':''}>${r[c]||'—'}</td>`).join('')}</tr>`; });
+      rows.forEach(r => { html += `<tr>${sec.cols.map((c,ci) => `<td${ci===0?' style="font-family:Noto Serif JP,serif;color:#2a3a6a"':''}>${r[c]||'—'}</td>`).join('')}</tr>`; });
       html += `</tbody></table>`;
     });
   }
