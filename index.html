@@ -602,8 +602,8 @@ window.onload = () => {
   const k = localStorage.getItem('jp_key');
   if (k) { API_KEY = k; document.getElementById('apiModal').style.display = 'none'; }
 
-  // ── 구버전 캐시 자동 삭제 (jp_v3_, jp_v5_ → jp_v6_ 로 업그레이드) ──
-  const oldPrefixes = ['jp_v3_', 'jp_v5_'];
+  // ── 구버전 캐시 자동 삭제 (jp_v3_, jp_v5_, jp_v6_ → jp_v7_ 로 업그레이드) ──
+  const oldPrefixes = ['jp_v3_', 'jp_v5_', 'jp_v6_'];
   const toDelete = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -970,7 +970,7 @@ async function analyzeCurrentChunk() {
   try {
     // 캐시 체크
     const hash = await hashText(text);
-    const cacheKey = `jp_v6_${hash}`;
+    const cacheKey = `jp_v7_${hash}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       document.getElementById('analyzingMsg').textContent = '⚡ 캐시된 분석 결과를 불러왔어요.';
@@ -987,10 +987,12 @@ async function analyzeCurrentChunk() {
 대상 학습자: JLPT N2 수준의 한국어 화자
 
 중요 규칙:
+- 【최우선·필수】 ruby_jp: 문장에 등장하는 모든 한자(漢字)에 빠짐없이 후리가나를 달 것. <ruby>한자<rt>요미가나</rt></ruby> 형식을 사용하며, 한자가 하나라도 ruby 없이 남으면 안 됨. 히라가나·카타카나·숫자·기호는 그대로 둘 것. 이 필드는 초보 학습자가 한자를 읽기 위한 핵심이므로 절대 평문(ruby 없는 원문)으로 반환하지 말 것.
+  올바른 예: "<ruby>巨大<rt>きょだい</rt></ruby>な<ruby>口<rt>くち</rt></ruby>ひげが<ruby>目立<rt>めだ</rt></ruby>っていた。"
+  잘못된 예(금지): "巨大な口ひげが目立っていた。" (ruby 없음)
 - 모든 설명, 문법 해설, 퀴즈 문제·선택지·해설은 반드시 한국어로 작성할 것 (영어·일본어로 설명 금지)
 - 일본어 예문에는 반드시 한국어 해석을 괄호로 병기할 것. 예: "雨が降りそうだ。(비가 올 것 같다.)"
 - sentences에는 텍스트의 모든 문장을 빠짐없이 포함할 것 (문장 생략 금지)
-- ruby_jp: 한자가 포함된 모든 단어에 <ruby>漢字<rt>よみ</rt></ruby> 태그를 적용한 문장 전체를 반환. 히라가나·카타카나만인 단어는 그대로 둘 것
 - words는 문장당 핵심 단어 최대 3개, note는 1줄 이내 (한국어)
 - vocab 각 카테고리는 최대 5개
 - verbs의 group은 "1그룹/2그룹/3그룹"(한국어), type은 "자동사/타동사/양용"(한국어)으로 표기
@@ -1005,8 +1007,8 @@ JSON 스키마:
   "title": "작품/텍스트 추정 제목 또는 첫 문장 요약",
   "sentences": [
     {
+      "ruby_jp": "모든 한자에 ruby를 단 문장. 예: <ruby>巨大<rt>きょだい</rt></ruby>な<ruby>口<rt>くち</rt></ruby>ひげ。 (필수, 평문 금지)",
       "jp": "원문 문장 (ruby 없는 원본)",
-      "ruby_jp": "<ruby>漢字<rt>かんじ</rt></ruby>가 포함된 문장 전체",
       "kr": "한국어 번역",
       "words": [
         {"word": "단어", "reading": "히라가나", "meaning": "한국어 뜻", "grammar": "품사·문법 설명 (한국어)"}
@@ -1045,7 +1047,7 @@ JSON 스키마:
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 8000,
+        max_tokens: 16000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -1055,6 +1057,20 @@ JSON 스키마:
 
     let raw = data.content.map(c => c.text || '').join('').replace(/```json|```/g, '').trim();
     analysis = JSON.parse(raw);
+
+    // ── ruby_jp 검증: 한자가 있는데 ruby 태그가 없으면 경고 ──
+    let missingRuby = 0;
+    (analysis.sentences || []).forEach((s, i) => {
+      const hasKanji = /[\u4e00-\u9faf]/.test(s.jp || '');
+      const hasRuby  = /<ruby>/.test(s.ruby_jp || '');
+      if (hasKanji && !hasRuby) {
+        missingRuby++;
+        console.warn(`[ruby_jp 누락] 문장 ${i+1}: ruby 태그 없음 →`, s.jp);
+      }
+    });
+    if (missingRuby > 0) {
+      console.warn(`⚠️ 총 ${missingRuby}개 문장에 후리가나(ruby)가 누락됐어요. 단어 reading으로 부분 보완합니다.`);
+    }
 
     // 캐시 저장
     try { localStorage.setItem(cacheKey, JSON.stringify(analysis)); } catch(_) {}
@@ -1119,6 +1135,26 @@ function renderAll() {
 /* ════════════════════════════════════════
    READER RENDER
 ════════════════════════════════════════ */
+// ruby_jp가 유효하면 그대로, 없으면 words의 reading으로 한자에 후리가나 부분 적용
+function buildRubyHtml(s) {
+  // 1) ruby_jp에 ruby 태그가 있으면 그대로 사용
+  if (s.ruby_jp && /<ruby>/.test(s.ruby_jp)) {
+    return s.ruby_jp;
+  }
+  // 2) 폴백: words의 reading으로 본문 한자 단어에 ruby 부착
+  let html = s.jp || '';
+  const words = (s.words || []).filter(w => w.word && w.reading && /[\u4e00-\u9faf]/.test(w.word));
+  // 긴 단어부터 치환해야 부분 겹침 방지
+  words.sort((a, b) => b.word.length - a.word.length);
+  words.forEach(w => {
+    const wEsc = w.word.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+    // 이미 ruby로 감싼 부분은 건드리지 않도록, 단순 첫 매칭만 치환
+    html = html.replace(new RegExp(wEsc),
+      `<ruby>${w.word}<rt>${w.reading}</rt></ruby>`);
+  });
+  return html;
+}
+
 function renderReader() {
   const body = document.getElementById('textBody');
   body.innerHTML = '';
@@ -1128,8 +1164,8 @@ function renderReader() {
     span.className = 'sentence';
     span.onclick = () => selectSentence(si, span);
 
-    // ruby_jp가 있으면 후리가나 포함 버전 사용
-    let html = s.ruby_jp || s.jp;
+    // ruby_jp(또는 폴백) 사용
+    let html = buildRubyHtml(s);
     (s.words || []).forEach(w => {
       if (!w.word) return;
       const wEsc = w.word.replace(/[-[\]{}()*+?.,\\^$|#\s]/g,'\\$&');
@@ -1155,8 +1191,8 @@ function selectSentence(si, el) {
   document.querySelectorAll('.sentence').forEach(s => s.classList.remove('selected'));
   el.classList.add('selected');
   const s = analysis.sentences[si];
-  // 사이드바에 후리가나(ruby) 버전 표시
-  document.getElementById('sb-jp').innerHTML = s.ruby_jp || s.jp;
+  // 사이드바에 후리가나(ruby) 버전 표시 (없으면 폴백)
+  document.getElementById('sb-jp').innerHTML = buildRubyHtml(s);
   document.getElementById('sb-kr').textContent = s.kr;
   document.getElementById('sb-note').textContent = s.note || '—';
 }
